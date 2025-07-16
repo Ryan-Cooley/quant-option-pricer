@@ -1,18 +1,16 @@
-# Quant Option Pricer
+# Monte Carlo Option Pricer
 
-A high-performance, production-grade Python project for pricing European call options using a Numba-accelerated Monte Carlo simulator and the analytical Black-Scholes model. This project is designed to be a robust, well-tested, and comprehensive tool for option pricing and risk analysis, suitable for both academic and professional use.
+This project grew out of a curiosity about how complex systems behave under uncertainty and how we can build tools to explore those questions at scale. The Monte Carlo Option Pricer is a fast, reliable simulation engine that models financial options and serves as a testbed for understanding risk, performance, and system robustness in real-world scenarios. By combining modern Python techniques with a focus on reproducibility and automation, it invites scientists, engineers, and curious minds alike to experiment, learn, and trust the results. The project is fully automated and production-ready, designed to run smoothly and transparently in any environment.
 
 ---
 
 ## 🚀 Core Features
 
-- **Dual Pricing Models**: Implements both a high-speed Monte Carlo (MC) simulator using Numba for JIT compilation and a benchmark Black-Scholes analytical solver.
-- **Live Market Data**: Ingests historical data from Yahoo Finance to calculate annualized volatility, feeding real-world data into the pricing models.
-- **Comprehensive Risk Analysis**: Calculates and visualizes key risk metrics, including Value-at-Risk (VaR), Conditional VaR (CVaR), and the Greeks (Delta and Vega).
-- **Advanced Visualizations**: Generates publication-quality plots for MC convergence, P&L distributions, and 3D Greek surfaces using Matplotlib.
-- **Robust Testing & Validation**: Includes a full `pytest` suite that validates the analytical formulas, ensures MC reproducibility, and verifies convergence against the Black-Scholes benchmark.
-- **Performance Benchmarking**: A dedicated script measures and plots the performance gains of the Numba-accelerated simulator against a pure Python implementation.
-- **Reproducibility**: Fully containerized with a `Dockerfile` and includes a GitHub Actions CI pipeline for automated testing and linting.
+- **Flexible Simulation Engine**: Models complex systems and their behavior under uncertainty, using both analytical and simulation-based approaches.
+- **Live Data Integration**: Ingests real-world data to keep experiments grounded and relevant.
+- **Risk Modeling & Performance Metrics**: Provides clear insights into system reliability, variability, and sensitivity to changing conditions.
+- **Advanced Visualizations**: Generates intuitive plots that help users see how systems respond to different scenarios.
+- **Reproducibility & Automation**: Automated testing, containerization, and continuous integration ensure results are reliable and easy to share.
 
 ---
 
@@ -73,41 +71,22 @@ This rigorous testing framework ensures that the results produced by the models 
 
 ## 📊 Plot Explanations
 
-The project generates several key visualizations that provide deep insights into option pricing and risk analysis:
+The project generates several key visualizations that provide insight into system behavior and reliability:
 
 ### 1. **Historical Log-Returns** (`plots/AAPL_returns.png`)
-**What it shows**: Daily log-returns of the underlying asset (e.g., AAPL) over the past year.
-**Financial significance**: Used to estimate annualized volatility (σ = std(returns) × √252), a critical input for option pricing models.
+Shows how the underlying asset’s value changes day to day, capturing the natural variability and occasional surprises in real-world data. This helps set realistic expectations for system performance.
 
-![AAPL Historical Log-Returns](plots/AAPL_returns.png)
+### 2. **Simulation Convergence** (`plots/convergence_v2.png`)
+Demonstrates how repeated simulations become more reliable as more data is gathered, illustrating the importance of scale and repetition in understanding complex systems.
 
-### 2. **Monte Carlo Convergence** (`plots/convergence_v2.png`)
-**What it shows**: The convergence of the Monte Carlo option price estimate to the analytical Black-Scholes price as the number of simulated paths increases.
-**Financial significance**: Demonstrates the Law of Large Numbers and validates the correctness of the MC implementation.
+### 3. **P&L Distribution** (`plots/pnl_histogram.png`)
+Visualizes the range of possible outcomes for a system, highlighting not just the average result but also the likelihood of rare, extreme events. This is key for understanding risk and robustness.
 
-![Monte Carlo Convergence](plots/convergence_v2.png)
-
-### 3. **P&L Distribution with Risk Metrics** (`plots/pnl_histogram.png`)
-**What it shows**: A histogram of the simulated Profit and Loss (P&L) at the option's expiry, with VaR and CVaR marked.
-**Financial significance**: Quantifies the downside risk of the option position. The VaR shows the maximum expected loss at a given confidence level, while the CVaR shows the expected loss in the worst-case scenarios.
-
-![P&L Distribution with Risk Metrics](plots/pnl_histogram.png)
-
-### 4. **Delta & Vega Surfaces** (`plots/delta_surface.png`, `plots/vega_surface.png`)
-**What it shows**: 3D surfaces of the option's Delta and Vega across a range of spot prices and volatilities.
-**Financial significance**: These plots provide a visual understanding of how the option's value changes in response to changes in the underlying asset's price and volatility. This is essential for hedging and risk management.
-
-#### Delta Surface
-![Delta Surface](plots/delta_surface.png)
-
-#### Vega Surface  
-![Vega Surface](plots/vega_surface.png)
+### 4. **System Sensitivity Surfaces** (`plots/delta_surface.png`, `plots/vega_surface.png`)
+Shows how the system responds to changes in key parameters, making it easy to spot which factors have the biggest impact on outcomes.
 
 ### 5. **Performance Benchmark** (`plots/benchmark_results.png`)
-**What it shows**: Speed comparison between Numba-accelerated and pure Python implementations.
-**Technical significance**: Demonstrates the performance benefits of Numba JIT compilation, showing >50x speedup for large-scale simulations.
-
-![Performance Benchmark](plots/benchmark_results.png)
+Compares the speed and efficiency of different computational approaches, demonstrating the value of performance optimization in large-scale experiments.
 
 ---
 
