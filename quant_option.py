@@ -100,9 +100,7 @@ def bs_delta(S0, K, r, sigma, T):
         r_ = r[~mask]
         sigma_ = sigma[~mask]
         T_ = T[~mask]
-        d1 = (
-            np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_
-        ) / (sigma_ * np.sqrt(T_))
+        d1 = (np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_) / (sigma_ * np.sqrt(T_))
         out[~mask] = norm.cdf(d1)
     return out.item() if out.shape == () else out
 
@@ -120,9 +118,7 @@ def bs_vega(S0, K, r, sigma, T):
         r_ = r[~mask]
         sigma_ = sigma[~mask]
         T_ = T[~mask]
-        d1 = (
-            np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_
-        ) / (sigma_ * np.sqrt(T_))
+        d1 = (np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_) / (sigma_ * np.sqrt(T_))
         out[~mask] = S0_ * norm.pdf(d1) * np.sqrt(T_)
     return out.item() if out.shape == () else out
 

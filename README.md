@@ -1,5 +1,4 @@
 [![CI](https://github.com/Ryan-Cooley/quant-option-pricer/actions/workflows/ci.yml/badge.svg)](https://github.com/Ryan-Cooley/quant-option-pricer/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/Ryan-Cooley/quant-option-pricer/graph/badge.svg?token=CAN6664CH9)](https://codecov.io/gh/Ryan-Cooley/quant-option-pricer)
 
 # Monte Carlo Option Pricer
 
