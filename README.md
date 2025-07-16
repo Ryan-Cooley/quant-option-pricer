@@ -1,6 +1,5 @@
 [![CI](https://github.com/Ryan-Cooley/quant-option-pricer/actions/workflows/main.yml/badge.svg)](https://github.com/Ryan-Cooley/quant-option-pricer/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/Ryan-Cooley/quant-option-pricer)](https://codecov.io/gh/Ryan-Cooley/quant-option-pricer)
-[![PyPI](https://img.shields.io/pypi/v/quant-option-pricer)](https://pypi.org/project/quant-option-pricer)
 
 # Monte Carlo Option Pricer
 
