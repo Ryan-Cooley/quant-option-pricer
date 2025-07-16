@@ -15,7 +15,7 @@ def download_log_returns(
     ticker: str, period: str = "1y", csv_path: str = None, retries: int = 3
 ):
     """
-    Download Close prices and compute daily log-returns.
+    Download Adjusted Close prices and compute daily log-returns.
     If csv_path is provided, read from CSV instead of hitting yfinance.
     Retries download up to `retries` times on rate-limit errors or empty data.
     """
@@ -43,7 +43,9 @@ def download_log_returns(
                     raise RuntimeError(
                         f"Failed to download {ticker} after {attempt} attempt(s): {e}"
                     ) from e
-    df["LogReturn"] = np.log(df["Close"] / df["Close"].shift(1))
+    # Use Adjusted Close for more accurate returns (accounts for dividends, splits)
+    price_col = "Adj Close" if "Adj Close" in df.columns else "Close"
+    df["LogReturn"] = np.log(df[price_col] / df[price_col].shift(1))
     return df["LogReturn"].dropna()
 
 
@@ -68,21 +70,61 @@ def plot_and_save_returns(returns, ticker, out_dir):
 # ── Black–Scholes & Greeks ──────────────────────────────────────────────────────
 def black_scholes_call(S0, K, r, sigma, T):
     """Analytical Black-Scholes price for a European call option."""
+    # Handle zero time case
+    if T == 0:
+        # With zero time, price is immediate payoff
+        return max(0, S0 - K)
+
+    # Handle zero volatility case
+    if sigma == 0:
+        # With zero volatility, price is discounted intrinsic value
+        return max(0, S0 * np.exp(r * T) - K) * np.exp(-r * T)
+
     d1 = (np.log(S0 / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
     return S0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
 
 
 def bs_delta(S0, K, r, sigma, T):
-    """Analytical Delta of a European call option (Black-Scholes)."""
-    d1 = (np.log(S0 / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    return norm.cdf(d1)
+    """Analytical Delta of a European call option (Black-Scholes).
+    Supports scalar or array inputs."""
+    S0, K, r, sigma, T = np.broadcast_arrays(S0, K, r, sigma, T)
+    mask = (sigma == 0) | (T == 0)
+    out = np.empty_like(S0, dtype=float)
+    # Delta is 1 if in-the-money, 0 if out-of-the-money, for zero vol/time
+    out[mask] = np.where(S0[mask] > K[mask], 1.0, 0.0)
+    # For the rest, use Black-Scholes formula
+    if np.any(~mask):
+        S0_ = S0[~mask]
+        K_ = K[~mask]
+        r_ = r[~mask]
+        sigma_ = sigma[~mask]
+        T_ = T[~mask]
+        d1 = (
+            np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_
+        ) / (sigma_ * np.sqrt(T_))
+        out[~mask] = norm.cdf(d1)
+    return out.item() if out.shape == () else out
 
 
 def bs_vega(S0, K, r, sigma, T):
-    """Analytical Vega of a European call option (Black-Scholes), per 1 vol unit."""
-    d1 = (np.log(S0 / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    return S0 * norm.pdf(d1) * np.sqrt(T)
+    """Analytical Vega of a European call option (Black-Scholes), per 1 vol unit.
+    Supports scalar or array inputs."""
+    S0, K, r, sigma, T = np.broadcast_arrays(S0, K, r, sigma, T)
+    mask = (sigma == 0) | (T == 0)
+    out = np.empty_like(S0, dtype=float)
+    out[mask] = 0.0
+    if np.any(~mask):
+        S0_ = S0[~mask]
+        K_ = K[~mask]
+        r_ = r[~mask]
+        sigma_ = sigma[~mask]
+        T_ = T[~mask]
+        d1 = (
+            np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_
+        ) / (sigma_ * np.sqrt(T_))
+        out[~mask] = S0_ * norm.pdf(d1) * np.sqrt(T_)
+    return out.item() if out.shape == () else out
 
 
 # ── Monte Carlo with Numba ─────────────────────────────────────────────────────

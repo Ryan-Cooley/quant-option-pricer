@@ -36,9 +36,7 @@ def test_compute_var_cvar():
 
 
 def test_annualized_vol_from_test_data():
-    returns = download_log_returns(
-        ticker="DUMMY", csv_path="tests/test_data.csv"
-    )
+    returns = download_log_returns(ticker="DUMMY", csv_path="tests/test_data.csv")
     sigma = annualized_vol(returns, trading_days=252)
     # Based on the test_data.csv values
     expected_sigma = 0.0734
@@ -60,4 +58,49 @@ def test_mc_convergence_to_bs():
     S0, K, r, sigma, T = 100, 105, 0.05, 0.2, 1.0
     bs_price = black_scholes_call(S0, K, r, sigma, T)
     mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 100_000, 42)
-    assert pytest.approx(mc_price, rel=0.05) == bs_price 
+    assert pytest.approx(mc_price, rel=0.05) == bs_price
+
+
+def test_zero_volatility():
+    """
+    Sanity check: Zero volatility should result in deterministic price movement.
+    With zero volatility, the option price should equal the discounted intrinsic value.
+    """
+    S0, K, r, sigma, T = 100, 105, 0.05, 0.0, 1.0
+    # With zero volatility, price should be max(0, S0*exp(r*T) - K) * exp(-r*T)
+    expected_price = max(0, S0 * np.exp(r * T) - K) * np.exp(-r * T)
+    bs_price = black_scholes_call(S0, K, r, sigma, T)
+    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 1000, 42)
+
+    # Both should be very close to expected
+    assert pytest.approx(bs_price, rel=1e-10) == expected_price
+    assert pytest.approx(mc_price, rel=1e-10) == expected_price
+
+
+def test_zero_time_to_maturity():
+    """
+    Sanity check: Zero time to maturity should result in immediate payoff.
+    Option price should equal max(0, S0 - K) for calls.
+    """
+    S0, K, r, sigma, T = 100, 105, 0.05, 0.2, 0.0
+    expected_payoff = max(0, S0 - K)
+
+    bs_price = black_scholes_call(S0, K, r, sigma, T)
+    mc_price = monte_carlo_price(S0, K, r, sigma, T, 1, 1000, 42)
+
+    # Both should equal the immediate payoff
+    assert pytest.approx(bs_price, rel=1e-10) == expected_payoff
+    assert pytest.approx(mc_price, rel=1e-10) == expected_payoff
+
+
+def test_at_the_money_zero_volatility():
+    """
+    Additional sanity check: At-the-money call with zero volatility and zero rate
+    should have zero value (no time value, no intrinsic value).
+    """
+    S0, K, r, sigma, T = 100, 100, 0.0, 0.0, 1.0
+    bs_price = black_scholes_call(S0, K, r, sigma, T)
+    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 1000, 42)
+
+    assert pytest.approx(bs_price, rel=1e-10) == 0.0
+    assert pytest.approx(mc_price, rel=1e-10) == 0.0
