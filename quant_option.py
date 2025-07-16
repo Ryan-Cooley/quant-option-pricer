@@ -86,11 +86,8 @@ def bs_vega(S0, K, r, sigma, T):
 
 
 # ── Monte Carlo with Numba ─────────────────────────────────────────────────────
-K_global = 0.0
-
-
 @njit
-def simulate_gbm_numba(S0, r, sigma, T, steps, n_paths, seed):
+def simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed):
     """
     Simulate n_paths of GBM and return the discounted mean payoff for a European call.
     Uses log-Euler discretization. Numba-accelerated for speed.
@@ -104,16 +101,14 @@ def simulate_gbm_numba(S0, r, sigma, T, steps, n_paths, seed):
             z = np.random.normal()
             logS += (r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z
         ST = S0 * np.exp(logS)
-        payoff = max(ST - K_global, 0.0)
+        payoff = max(ST - K, 0.0)
         payoff_sum += payoff
     return np.exp(-r * T) * (payoff_sum / n_paths)
 
 
 def monte_carlo_price(S0, K, r, sigma, T, steps, n_paths, seed):
     """Wrapper for the Numba-accelerated MC pricer."""
-    global K_global
-    K_global = K
-    return simulate_gbm_numba(S0, r, sigma, T, steps, n_paths, seed)
+    return simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed)
 
 
 def simulate_gbm_paths(S0, r, sigma, T, steps, n_paths, seed):
