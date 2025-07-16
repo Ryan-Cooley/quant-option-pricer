@@ -18,6 +18,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install flake8 black
+    
+    - name: Run code quality checks
+      run: |
+        flake8 quant_option.py --max-line-length=88 --ignore=E203,W503
+        black --check quant_option.py
     
     - name: Run tests
       run: |
