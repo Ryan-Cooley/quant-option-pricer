@@ -75,19 +75,19 @@ This rigorous testing framework ensures that the results produced by the models 
 
 The project generates several key visualizations that provide insight into system behavior and reliability:
 
-### 1. **Historical Log-Returns** (`plots/AAPL_returns.png`)
+### 1. **Historical Log-Returns** (`https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/AAPL_returns.png`)
 Shows how the underlying asset’s value changes day to day, capturing the natural variability and occasional surprises in real-world data. This helps set realistic expectations for system performance.
 
-### 2. **Simulation Convergence** (`plots/convergence_v2.png`)
+### 2. **Simulation Convergence** (`https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/convergence_v2.png`)
 Demonstrates how repeated simulations become more reliable as more data is gathered, illustrating the importance of scale and repetition in understanding complex systems.
 
-### 3. **P&L Distribution** (`plots/pnl_histogram.png`)
+### 3. **P&L Distribution** (`https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/pnl_histogram.png`)
 Visualizes the range of possible outcomes for a system, highlighting not just the average result but also the likelihood of rare, extreme events. This is key for understanding risk and robustness.
 
-### 4. **System Sensitivity Surfaces** (`plots/delta_surface.png`, `plots/vega_surface.png`)
+### 4. **System Sensitivity Surfaces** (`https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/delta_surface.png`, `https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/vega_surface.png`)
 Shows how the system responds to changes in key parameters, making it easy to spot which factors have the biggest impact on outcomes.
 
-### 5. **Performance Benchmark** (`plots/benchmark_results.png`)
+### 5. **Performance Benchmark** (`https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/benchmark_results.png`)
 Compares the speed and efficiency of different computational approaches, demonstrating the value of performance optimization in large-scale experiments.
 
 ---
