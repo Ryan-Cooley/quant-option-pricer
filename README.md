@@ -1,6 +1,8 @@
-# Monte Carlo Option Pricer
+[![CI](https://github.com/Ryan-Cooley/quant-option-pricer/actions/workflows/main.yml/badge.svg)](https://github.com/Ryan-Cooley/quant-option-pricer/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/Ryan-Cooley/quant-option-pricer)](https://codecov.io/gh/Ryan-Cooley/quant-option-pricer)
+[![PyPI](https://img.shields.io/pypi/v/quant-option-pricer)](https://pypi.org/project/quant-option-pricer)
 
-![CI Workflow Status](https://github.com/Ryan-Cooley/quant-option-pricer/workflows/CI/badge.svg)
+# Monte Carlo Option Pricer
 
 This project grew out of a curiosity about how complex systems behave under uncertainty and how we can build tools to explore those questions at scale. The Monte Carlo Option Pricer is a fast, reliable simulation engine that models financial options and serves as a testbed for understanding risk, performance, and system robustness in real-world scenarios. By combining modern Python techniques with a focus on reproducibility and automation, it invites scientists, engineers, and curious minds alike to experiment, learn, and trust the results. The project is fully automated and production-ready, designed to run smoothly and transparently in any environment.
 
@@ -71,9 +73,13 @@ This rigorous testing framework ensures that the results produced by the models 
 
 ---
 
-## 📊 Plot Explanations.
+## 📊 Sample Outputs
 
-The project generates several key visualizations that provide insight into system behavior and reliability:
+### Convergence Analysis
+
+![Monte Carlo vs. Black‑Scholes Convergence](plots/convergence_v2.png)
+
+_This chart shows how the Monte Carlo estimate approaches the analytical price as the number of simulated paths increases, validating accuracy and performance._
 
 ### 1. **Historical Log-Returns**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/AAPL_returns.png" alt="AAPL Returns" style="display: block; margin: auto;">
