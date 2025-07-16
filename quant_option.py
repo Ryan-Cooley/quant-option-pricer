@@ -201,21 +201,31 @@ def plot_convergence(S0, K, r, sigma, T, steps, path_counts, seed, out_dir):
     """Plot MC price convergence vs. Black-Scholes analytical price."""
     bs = black_scholes_call(S0, K, r, sigma, T)
     estimates = [
-        monte_carlo_price(S0, K, r, sigma, T, steps, n, seed) for n in path_counts
+        monte_carlo_price(S0, K, r, sigma, T, steps, n, seed + i) for i, n in enumerate(path_counts)
     ]
-    plt.figure()
-    plt.plot(path_counts, estimates, "o-", label="MC estimate")
+    
+    # Print convergence details for debugging
+    print(f"\n--- Convergence Analysis ---")
+    print(f"Black-Scholes price: {bs:.4f}")
+    for i, (n_paths, estimate) in enumerate(zip(path_counts, estimates)):
+        error = abs(estimate - bs) / bs * 100
+        print(f"{n_paths:,} paths: {estimate:.4f} (error: {error:.2f}%)")
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(path_counts, estimates, "o-", label="MC estimate", linewidth=2, markersize=8)
     plt.hlines(
-        bs, path_counts[0], path_counts[-1], linestyles="--", label="Black–Scholes"
+        bs, path_counts[0], path_counts[-1], linestyles="--", label=f"Black–Scholes: {bs:.4f}", 
+        colors="red", linewidth=2
     )
     plt.xscale("log")
     plt.xlabel("Number of paths")
     plt.ylabel("Option price")
-    plt.title("MC convergence vs B–S")
+    plt.title(f"MC Convergence vs Black–Scholes (S₀={S0}, K={K}, σ={sigma:.1%})")
     plt.legend()
+    plt.grid(True, alpha=0.3)
     plt.tight_layout()
     out = os.path.join(out_dir, "convergence.png")
-    plt.savefig(out)
+    plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"Saved convergence plot → {out}")
 
