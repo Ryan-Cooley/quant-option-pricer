@@ -79,17 +79,35 @@ The project generates several key visualizations that provide deep insights into
 **What it shows**: Daily log-returns of the underlying asset (e.g., AAPL) over the past year.
 **Financial significance**: Used to estimate annualized volatility (σ = std(returns) × √252), a critical input for option pricing models.
 
+![AAPL Historical Log-Returns](plots/AAPL_returns.png)
+
 ### 2. **Monte Carlo Convergence** (`plots/convergence.png`)
 **What it shows**: The convergence of the Monte Carlo option price estimate to the analytical Black-Scholes price as the number of simulated paths increases.
 **Financial significance**: Demonstrates the Law of Large Numbers and validates the correctness of the MC implementation.
+
+![Monte Carlo Convergence](plots/convergence.png)
 
 ### 3. **P&L Distribution with Risk Metrics** (`plots/pnl_histogram.png`)
 **What it shows**: A histogram of the simulated Profit and Loss (P&L) at the option's expiry, with VaR and CVaR marked.
 **Financial significance**: Quantifies the downside risk of the option position. The VaR shows the maximum expected loss at a given confidence level, while the CVaR shows the expected loss in the worst-case scenarios.
 
+![P&L Distribution with Risk Metrics](plots/pnl_histogram.png)
+
 ### 4. **Delta & Vega Surfaces** (`plots/delta_surface.png`, `plots/vega_surface.png`)
 **What it shows**: 3D surfaces of the option's Delta and Vega across a range of spot prices and volatilities.
 **Financial significance**: These plots provide a visual understanding of how the option's value changes in response to changes in the underlying asset's price and volatility. This is essential for hedging and risk management.
+
+#### Delta Surface
+![Delta Surface](plots/delta_surface.png)
+
+#### Vega Surface  
+![Vega Surface](plots/vega_surface.png)
+
+### 5. **Performance Benchmark** (`benchmark_results.png`)
+**What it shows**: Speed comparison between Numba-accelerated and pure Python implementations.
+**Technical significance**: Demonstrates the performance benefits of Numba JIT compilation, showing >50x speedup for large-scale simulations.
+
+![Performance Benchmark](benchmark_results.png)
 
 ---
 
