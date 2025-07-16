@@ -1,5 +1,7 @@
 # Monte Carlo Option Pricer
 
+![CI Workflow Status](https://github.com/Ryan-Cooley/quant-option-pricer/workflows/CI/badge.svg)
+
 This project grew out of a curiosity about how complex systems behave under uncertainty and how we can build tools to explore those questions at scale. The Monte Carlo Option Pricer is a fast, reliable simulation engine that models financial options and serves as a testbed for understanding risk, performance, and system robustness in real-world scenarios. By combining modern Python techniques with a focus on reproducibility and automation, it invites scientists, engineers, and curious minds alike to experiment, learn, and trust the results. The project is fully automated and production-ready, designed to run smoothly and transparently in any environment.
 
 ---

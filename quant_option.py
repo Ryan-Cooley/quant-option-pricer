@@ -95,10 +95,11 @@ def simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed):
     np.random.seed(seed)
     dt = T / steps
     payoff_sum = 0.0
+    random_numbers = np.random.normal(0.0, 1.0, (n_paths, steps))
     for i in range(n_paths):
         logS = 0.0
         for j in range(steps):
-            z = np.random.normal()
+            z = random_numbers[i, j]
             logS += (r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z
         ST = S0 * np.exp(logS)
         payoff = max(ST - K, 0.0)
