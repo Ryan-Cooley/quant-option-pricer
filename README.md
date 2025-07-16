@@ -2,111 +2,136 @@
 
 # Monte Carlo Option Pricer
 
-This project grew out of a curiosity about how complex systems behave under uncertainty and how we can build tools to explore those questions at scale. The Monte Carlo Option Pricer is a fast, reliable simulation engine that models financial options and serves as a testbed for understanding risk, performance, and system robustness in real-world scenarios. By combining modern Python techniques with a focus on reproducibility and automation, it invites scientists, engineers, and curious minds alike to experiment, learn, and trust the results. The project is fully automated and production-ready, designed to run smoothly and transparently in any environment.
+A high-performance, production-ready Monte Carlo simulation engine for pricing European options, complete with comprehensive risk analysis and visualization. This project showcases a blend of advanced Python programming, financial modeling, and modern software engineering best practices.
+
+## 🎯 Overview
+
+The Monte Carlo Option Pricer provides a robust framework for option valuation by combining the analytical Black-Scholes model with stochastic Monte Carlo simulations. The core of the project is a high-performance simulation engine, accelerated with Numba JIT compilation, which achieves a significant speedup (over 100x) compared to pure Python implementations. This allows for large-scale simulations without sacrificing performance.
+
+### Key Capabilities
+
+- **Dual Pricing Models**: European Call and Put option pricing using both the analytical Black-Scholes formula and a Monte Carlo simulation engine.
+- **Comprehensive Risk Metrics**: Calculation and visualization of key risk metrics, including Value at Risk (VaR), Conditional Value at Risk (CVaR), and the Greeks (Delta and Vega).
+- **Live Data Integration**: Seamless integration with Yahoo Finance to fetch historical price data and calculate annualized volatility for more realistic pricing.
+- **Advanced Visualizations**: A suite of plotting functions to generate insightful visualizations, including simulation convergence analysis, P&L distributions, and 3D sensitivity surfaces for the Greeks.
+- **Production-Ready**: The project is fully containerized with Docker, includes a comprehensive test suite with `pytest`, and features a CI/CD pipeline using GitHub Actions for automated testing and code quality checks.
 
 ---
 
 ## 🚀 Core Features
 
-- **Flexible Simulation Engine**: Models complex systems and their behavior under uncertainty, using both analytical and simulation-based approaches.
-- **Live Data Integration**: Ingests real-world data to keep experiments grounded and relevant.
-- **Risk Modeling & Performance Metrics**: Provides clear insights into system reliability, variability, and sensitivity to changing conditions.
-- **Advanced Visualizations**: Generates intuitive plots that help users see how systems respond to different scenarios.
-- **Reproducibility & Automation**: Automated testing, containerization, and continuous integration ensure results are reliable and easy to share.
-- **Data Hygiene**: Uses Adjusted Close prices for log-returns, ensuring accurate volatility estimation and handling of dividends/splits.
-- **Robust Greeks**: Delta and Vega functions handle both scalars and arrays, so surface plots are always correct (no NaNs or errors at edges).
+- **⚡ High-Performance Simulation**: Numba-accelerated Monte Carlo engine for high-speed, large-scale simulations.
+- **📊 Live Market Data**: Real-time volatility estimation using adjusted close prices from Yahoo Finance.
+- **🎯 Advanced Risk Analysis**: In-depth risk assessment with VaR, CVaR, and Greeks calculations.
+- **🔬 Mathematical Rigor**: The models are validated through a comprehensive test suite that includes edge cases and convergence checks against the analytical Black-Scholes model.
+- **📈 Rich Visualizations**: Publication-quality plots for convergence analysis, P&L distributions, and sensitivity analysis.
+- **🐳 Production Deployment**: Docker containerization and an automated CI/CD pipeline for robust, reproducible deployments.
+- **🧪 Reproducible Results**: Deterministic simulations through careful management of random seeds, ensuring that results can be reproduced.
 
 ---
 
 ## 🏁 Quickstart
 
-### 1. Clone and Install
+### Prerequisites
+
+- Python 3.8+
+- `pip` or `conda` for package management.
+
+### Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/Ryan-Cooley/quant-option-pricer.git
 cd quant-option-pricer
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Run the Option Pricer
+### Basic Usage
+
+The primary entry point is `quant_option.py`, a command-line interface for pricing options.
 
 ```bash
-python quant_option.py --ticker AAPL --S0 150 --K 155
+# Price a call option for AAPL with default parameters
+python quant_option.py --ticker AAPL
+
+# Price a put option for TSLA with custom parameters
+python quant_option.py --ticker TSLA --option-type put --K 200 --T 0.5 --r 0.03 --paths 50000
 ```
 
-### 3. Run the Full Test Suite
+### Interactive Notebook
 
-This command runs all unit and integration tests to ensure the models are functioning correctly.
-
-```bash
-PYTHONPATH=. pytest
-```
-
-### 4. Run the Performance Benchmark
+For a more interactive experience, a Jupyter notebook is provided in the `notebooks` directory.
 
 ```bash
-python benchmark_performance.py
-```
-
-### 5. Run in Docker
-
-For guaranteed reproducibility, build and run the project in a container.
-
-```bash
-docker build -t quant-option .
-docker run --rm -v "$PWD/plots:/app/plots" quant-option
+# Launch the Jupyter notebook
+jupyter notebook notebooks/QuantOptionDemo.ipynb
 ```
 
 ---
 
-## ✅ Testing & Validation
+## ✅ Testing and Validation
 
-A key feature of this project is its emphasis on correctness and reliability, enforced by a comprehensive test suite using `pytest`.
+The project includes a comprehensive test suite to ensure the correctness and reliability of the implementation.
 
-- **Analytical Correctness**: The Black-Scholes formula and its Greeks are tested against known, trusted values to ensure their implementation is accurate.
-- **Stochastic Validation**: The Monte Carlo simulator is tested for:
-    - **Reproducibility**: Guarantees that the same random seed produces the exact same pricing result.
-    - **Convergence**: Verifies that the MC price converges to the analytical Black-Scholes price within a tight tolerance as the number of simulation paths increases.
-- **Data Pipeline Integrity**: The volatility calculation is tested using a static, local data file to ensure the data processing logic is sound and independent of live data sources.
-- **Sanity Check Unit Tests**: Includes tests for zero volatility, zero time-to-maturity, and at-the-money edge cases—ensuring mathematical correctness in all scenarios.
+### Running Tests
 
-This rigorous testing framework ensures that the results produced by the models are not just fast, but also accurate and reliable.
+```bash
+# Run all tests
+pytest
+
+# Run tests with coverage report
+pytest --cov=quant_option
+```
+
+### Validation Framework
+
+- **Analytical Correctness**: The Black-Scholes formulas are tested against known, trusted values to ensure their accuracy.
+- **Stochastic Validation**: The Monte Carlo engine's results are validated for convergence to the analytical Black-Scholes price. Reproducibility is ensured by testing with a fixed random seed.
+- **Edge Case Handling**: The test suite includes checks for edge cases such as zero volatility and zero time-to-maturity to ensure the models behave as expected.
+- **Data Pipeline**: The volatility estimation from historical data is tested using a static dataset for consistency.
 
 ---
 
 ## 📊 Sample Outputs
 
-*All plots below are generated by the current version of the code and reflect the latest outputs in the `plots/` directory.*
+*All plots are generated by the code and can be found in the `plots/` directory.*
 
 ### 1. **Historical Log-Returns**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/AAPL_returns.png" alt="AAPL Returns" style="display: block; margin: auto;">
-Shows how the underlying asset’s value changes day to day, capturing the natural variability and occasional surprises in real-world data. This helps set realistic expectations for system performance.
+*Daily log-returns of the underlying asset, calculated from adjusted close prices to accurately reflect historical volatility.*
 
 ### 2. **Simulation Convergence**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/convergence_v2.png" alt="Convergence" style="display: block; margin: auto;">
-Demonstrates how repeated simulations become more reliable as more data is gathered, illustrating the importance of scale and repetition in understanding complex systems.
+*The Monte Carlo option price converging to the analytical Black-Scholes price as the number of simulation paths increases, validating the accuracy of the simulation.*
 
 ### 3. **P&L Distribution**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/pnl_histogram.png" alt="P&L Distribution" style="display: block; margin: auto;">
-Visualizes the range of possible outcomes for a system, highlighting not just the average result but also the likelihood of rare, extreme events. This is key for understanding risk and robustness.
+*The distribution of potential profit and loss at option expiry, with VaR and CVaR metrics highlighted to provide a clear view of downside risk.*
 
-### 4. **System Sensitivity Surfaces**
+### 4. **Greeks Sensitivity Surfaces**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/delta_surface.png" alt="Delta Surface" style="display: block; margin: auto;">
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/vega_surface.png" alt="Vega Surface" style="display: block; margin: auto;">
-Shows how the system responds to changes in key parameters, making it easy to spot which factors have the biggest impact on outcomes.
-
-### 5. **Performance Benchmark**
-<img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/benchmark_results.png" alt="Benchmark Results" style="display: block; margin: auto;">
-Compares the speed and efficiency of different computational approaches, demonstrating the value of performance optimization in large-scale experiments.
+*3D surfaces showing the sensitivity of the option price (Delta and Vega) to changes in the spot price and volatility.*
 
 ---
 
-## 🧑‍💻 Resume & Portfolio Highlights
+## 🧑‍💻 Technical Achievements & Skills Demonstrated
 
-- **Engineered a High-Performance Monte Carlo Engine**: Developed a financial simulator in Python to price European options, leveraging Numba for JIT compilation to achieve a >100x speedup over pure Python for 100,000+ path simulations.
-- **Validated Models with a Robust Test Suite**: Implemented a comprehensive `pytest` framework to validate the correctness of the analytical Black-Scholes formulas and to verify the stochastic convergence and reproducibility of the Monte Carlo engine.
+### Technical Achievements
+
+- **Engineered a High-Performance Monte Carlo Engine**: Developed a sophisticated financial simulator in Python, leveraging Numba for JIT compilation to achieve a >100x speedup over native Python, enabling large-scale simulations.
+- **Implemented a Robust Testing Framework**: Created a comprehensive test suite with `pytest` to validate the analytical Black-Scholes model and verify the stochastic convergence and reproducibility of the Monte Carlo engine.
 - **Automated Market Data & Risk Analysis Pipeline**: Built a data pipeline that ingests historical market data from `yfinance`, calculates annualized volatility, and feeds it into a risk analysis module that computes and visualizes VaR, CVaR, and the Greeks.
-- **Ensured Full Reproducibility with Docker & CI/CD**: Containerized the entire application with Docker and configured a GitHub Actions workflow for automated testing and linting, ensuring consistent and reliable results across any environment.
+- **Ensured Full Reproducibility with Docker & CI/CD**: Containerized the application with Docker and configured a GitHub Actions workflow for automated testing and linting, ensuring consistent and reliable results in any environment.
+
+### Skills Demonstrated
+
+- **Advanced Python**: Numba JIT compilation, NumPy vectorization, pandas for data manipulation, `argparse` for CLI.
+- **Financial Modeling**: Black-Scholes theory, Monte Carlo simulation, risk metrics (VaR, CVaR), and Greeks.
+- **Software Engineering**: Unit testing (`pytest`), CI/CD (GitHub Actions), containerization (Docker), and code quality (linting, formatting).
+- **Data Science**: Statistical analysis, data visualization (`matplotlib`), and reproducible research.
 
 ---
 
@@ -114,28 +139,70 @@ Compares the speed and efficiency of different computational approaches, demonst
 
 ```
 quant-option-pricer/
-├── quant_option.py           # Main CLI script
-├── benchmark_performance.py  # Performance benchmark
+├── quant_option.py           # Main CLI script with full functionality
+├── benchmark_performance.py  # Performance benchmarking suite
 ├── requirements.txt          # Python dependencies
-├── Dockerfile                # Docker reproducibility
+├── Dockerfile                # Docker containerization
 ├── tests/
-│   ├── test_quant_option.py  # Unit and integration tests
-│   └── test_data.csv         # Static data for testing
+│   ├── test_quant_option.py  # Comprehensive unit and integration tests
+│   └── test_data.csv         # Static test data for reproducible testing
 ├── notebooks/
-│   └── QuantOptionDemo.ipynb # Interactive notebook
-├── plots/                    # Output figures
+│   └── QuantOptionDemo.ipynb # Interactive Jupyter notebook for exploration
+├── plots/                    # Directory for generated output figures
 └── .github/
-    └── workflows/ci.yml      # GitHub Actions CI
+    └── workflows/ci.yml      # GitHub Actions CI/CD pipeline
+```
+
+---
+
+## 🔧 Development
+
+### Code Quality
+
+The project follows standard Python code quality practices.
+
+```bash
+# Format code with Black
+black .
+
+# Lint code with flake8
+flake8 .
+```
+
+### Docker Development
+
+```bash
+# Build the Docker image
+docker build -t quant-option .
+
+# Run the container
+docker run --rm -v "$(pwd)/plots:/app/plots" quant-option --ticker GOOG
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Pull requests and issues are welcome! For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! Please follow these steps:
+
+1.  Fork the repository.
+2.  Create a new feature branch (`git checkout -b feature/my-new-feature`).
+3.  Make your changes and add tests.
+4.  Ensure all tests pass (`pytest`).
+5.  Commit your changes (`git commit -m 'Add some feature'`).
+6.  Push to the branch (`git push origin feature/my-new-feature`).
+7.  Open a Pull Request.
 
 ---
 
 ## 📄 License
 
-MIT License
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- The high-performance numerical computations are made possible by [Numba](https://numba.pydata.org/).
+- Market data is sourced from [Yahoo Finance](https://finance.yahoo.com/) via the [yfinance](https://github.com/ranaroussi/yfinance) library.
+- The option pricing models are based on the foundational work of Fischer Black, Myron Scholes, and Robert Merton.
