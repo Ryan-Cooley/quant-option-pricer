@@ -75,19 +75,24 @@ This rigorous testing framework ensures that the results produced by the models 
 
 The project generates several key visualizations that provide insight into system behavior and reliability:
 
-### 1. **Historical Log-Returns** ![AAPL Returns](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/AAPL_returns.png)
+### 1. **Historical Log-Returns**
+<p align="center">![AAPL Returns](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/AAPL_returns.png)</p>
 Shows how the underlying asset’s value changes day to day, capturing the natural variability and occasional surprises in real-world data. This helps set realistic expectations for system performance.
 
-### 2. **Simulation Convergence** ![Convergence](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/convergence_v2.png)
+### 2. **Simulation Convergence**
+<p align="center">![Convergence](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/convergence_v2.png)</p>
 Demonstrates how repeated simulations become more reliable as more data is gathered, illustrating the importance of scale and repetition in understanding complex systems.
 
-### 3. **P&L Distribution** ![P&L Distribution](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/pnl_histogram.png)
+### 3. **P&L Distribution**
+<p align="center">![P&L Distribution](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/pnl_histogram.png)</p>
 Visualizes the range of possible outcomes for a system, highlighting not just the average result but also the likelihood of rare, extreme events. This is key for understanding risk and robustness.
 
-### 4. **System Sensitivity Surfaces** ![Delta Surface](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/delta_surface.png), ![Vega Surface](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/vega_surface.png)
+### 4. **System Sensitivity Surfaces**
+<p align="center">![Delta Surface](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/delta_surface.png), ![Vega Surface](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/vega_surface.png)</p>
 Shows how the system responds to changes in key parameters, making it easy to spot which factors have the biggest impact on outcomes.
 
-### 5. **Performance Benchmark** ![Benchmark Results](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/benchmark_results.png)
+### 5. **Performance Benchmark**
+<p align="center">![Benchmark Results](https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/benchmark_results.png)</p>
 Compares the speed and efficiency of different computational approaches, demonstrating the value of performance optimization in large-scale experiments.
 
 ---
