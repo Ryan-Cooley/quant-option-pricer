@@ -71,7 +71,7 @@ This rigorous testing framework ensures that the results produced by the models 
 
 ---
 
-## 📊 Plot Explanations
+## 📊 Plot Explanations.
 
 The project generates several key visualizations that provide insight into system behavior and reliability:
 
