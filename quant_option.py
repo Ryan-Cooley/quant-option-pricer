@@ -198,8 +198,16 @@ def plot_greek_surface(greek_fn, var_name, grid_S, grid_sigma, args, out_dir):
 
 # ── Convergence Plot ────────────────────────────────────────────────────────────
 def plot_convergence(
-    S0, K, r, sigma, T, steps, path_counts, seed, out_dir,
-    plot_filename="convergence.png"
+    S0,
+    K,
+    r,
+    sigma,
+    T,
+    steps,
+    path_counts,
+    seed,
+    out_dir,
+    plot_filename="convergence.png",
 ):
     """Plot MC price convergence vs. Black-Scholes analytical price."""
     bs = black_scholes_call(S0, K, r, sigma, T)
@@ -212,9 +220,7 @@ def plot_convergence(
     print(f"Black-Scholes price: {bs:.4f}")
     for i, (n_paths, estimate) in enumerate(zip(path_counts, estimates)):
         error = abs(estimate - bs) / bs * 100
-        print(
-            f"{n_paths:,} paths: {estimate:.4f} (error: {error:.2f}%)"
-        )
+        print(f"{n_paths:,} paths: {estimate:.4f} (error: {error:.2f}%)")
     plt.figure(figsize=(10, 6))
     plt.plot(
         path_counts,
@@ -229,18 +235,14 @@ def plot_convergence(
         path_counts[0],
         path_counts[-1],
         linestyles="--",
-        label=(
-            f"Black–Scholes: {bs:.4f}"
-        ),
+        label=(f"Black–Scholes: {bs:.4f}"),
         colors="red",
         linewidth=2,
     )
     plt.xscale("log")
     plt.xlabel("Number of paths")
     plt.ylabel("Option price")
-    plt.title(
-        f"MC Convergence vs Black–Scholes (S₀={S0}, K={K}, σ={sigma:.1%})"
-    )
+    plt.title(f"MC Convergence vs Black–Scholes (S₀={S0}, K={K}, σ={sigma:.1%})")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -356,7 +358,7 @@ def main():
         path_counts,
         args.seed,
         args.outdir,
-        plot_filename="convergence_v2.png"
+        plot_filename="convergence_v2.png",
     )
 
     # 5. VaR/CVaR and P&L histogram

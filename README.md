@@ -81,11 +81,11 @@ The project generates several key visualizations that provide deep insights into
 
 ![AAPL Historical Log-Returns](plots/AAPL_returns.png)
 
-### 2. **Monte Carlo Convergence** (`plots/convergence.png`)
+### 2. **Monte Carlo Convergence** (`plots/convergence_v2.png`)
 **What it shows**: The convergence of the Monte Carlo option price estimate to the analytical Black-Scholes price as the number of simulated paths increases.
 **Financial significance**: Demonstrates the Law of Large Numbers and validates the correctness of the MC implementation.
 
-![Monte Carlo Convergence](plots/convergence.png)
+![Monte Carlo Convergence](plots/convergence_v2.png)
 
 ### 3. **P&L Distribution with Risk Metrics** (`plots/pnl_histogram.png`)
 **What it shows**: A histogram of the simulated Profit and Loss (P&L) at the option's expiry, with VaR and CVaR marked.
@@ -103,11 +103,11 @@ The project generates several key visualizations that provide deep insights into
 #### Vega Surface  
 ![Vega Surface](plots/vega_surface.png)
 
-### 5. **Performance Benchmark** (`benchmark_results.png`)
+### 5. **Performance Benchmark** (`plots/benchmark_results.png`)
 **What it shows**: Speed comparison between Numba-accelerated and pure Python implementations.
 **Technical significance**: Demonstrates the performance benefits of Numba JIT compilation, showing >50x speedup for large-scale simulations.
 
-![Performance Benchmark](benchmark_results.png)
+![Performance Benchmark](plots/benchmark_results.png)
 
 ---
 
