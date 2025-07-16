@@ -75,12 +75,6 @@ This rigorous testing framework ensures that the results produced by the models 
 
 ## 📊 Sample Outputs
 
-### Convergence Analysis
-
-![Monte Carlo vs. Black‑Scholes Convergence](plots/convergence_v2.png)
-
-_This chart shows how the Monte Carlo estimate approaches the analytical price as the number of simulated paths increases, validating accuracy and performance._
-
 ### 1. **Historical Log-Returns**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/AAPL_returns.png" alt="AAPL Returns" style="display: block; margin: auto;">
 Shows how the underlying asset’s value changes day to day, capturing the natural variability and occasional surprises in real-world data. This helps set realistic expectations for system performance.
