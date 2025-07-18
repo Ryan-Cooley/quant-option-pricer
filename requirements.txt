@@ -5,3 +5,4 @@ scipy
 yfinance
 numba
 pytest 
+pandas_datareader 

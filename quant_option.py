@@ -7,44 +7,96 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 import yfinance as yf
+import datetime
 from numba import njit
+from pandas_datareader import data as pdr
 
 
 # ── Data & Volatility ──────────────────────────────────────────────────────────
+def fetch_data(ticker: str, start: str, end: str) -> pd.DataFrame:
+    """
+    Downloads Close prices for the given ticker and date range.
+    Tries Stooq first, then yfinance as fallback.
+    Forward-fills missing data, sets Date as index, and returns a DataFrame with a
+    'Close' column. Prints/logs which data source was used. Raises ValueError if
+    ticker is invalid or no data is returned.
+    """
+    # Try Stooq first
+    try:
+        df = pdr.get_data_stooq(ticker, start=start, end=end)
+        if not df.empty:
+            print(f"Fetched data for {ticker} from Stooq.")
+            df = df[['Close']]
+            df = df.ffill()
+            df.index.name = 'Date'
+            # stooq returns data in descending order
+            df = df.sort_index()
+            return df
+        else:
+            print(f"Stooq returned empty data for {ticker}.")
+    except Exception as e:
+        print(f"Stooq failed for {ticker}: {e}")
+    # Fallback to yfinance
+    try:
+        data = yf.download(ticker, start=start, end=end)
+        if data.empty:
+            raise ValueError(
+                f"No data found for ticker '{ticker}' in the given date range from yfinance."
+            )
+        # Handle multi-index columns (new yfinance default)
+        if isinstance(data.columns, pd.MultiIndex):
+            if ('Close', ticker) in data.columns:
+                close = data[('Close', ticker)]
+            else:
+                raise ValueError(
+                    f"'Close' column not found for ticker '{ticker}' in yfinance data."
+                )
+        else:
+            if 'Close' in data.columns:
+                close = data['Close']
+            else:
+                raise ValueError(f"'Close' column not found in yfinance data.")
+        df = pd.DataFrame({'Close': close}).ffill()
+        df.index.name = 'Date'
+        print(f"Fetched data for {ticker} from yfinance.")
+        return df
+    except Exception as e:
+        print(f"yfinance failed for {ticker}: {e}")
+    raise ValueError(
+        "Failed to fetch data for ticker from all available sources."
+    )
+
+
+def period_to_dates(period: str):
+    """
+    Convert a period string like '1y', '6mo', '3d' to start and end dates.
+    """
+    end = datetime.datetime.today()
+    if period.endswith('y'):
+        start = end - pd.DateOffset(years=int(period[:-1]))
+    elif period.endswith('mo'):
+        start = end - pd.DateOffset(months=int(period[:-2]))
+    elif period.endswith('d'):
+        start = end - pd.DateOffset(days=int(period[:-1]))
+    else:
+        raise ValueError(f"Unknown period format: {period}")
+    return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+
+
 def download_log_returns(
     ticker: str, period: str = "1y", csv_path: str = None, retries: int = 3
 ):
     """
-    Download Adjusted Close prices and compute daily log-returns.
-    If csv_path is provided, read from CSV instead of hitting yfinance.
-    Retries download up to `retries` times on rate-limit errors or empty data.
+    Download Close prices and compute daily log-returns.
+    If csv_path is provided, read from CSV instead of hitting data sources.
+    Tries Stooq first, then yfinance as fallback.
     """
     if csv_path:
         df = pd.read_csv(csv_path, parse_dates=True, index_col="Date")
     else:
-        for attempt in range(1, retries + 1):
-            try:
-                df = yf.download(ticker, period=period, progress=False)
-                if df.empty:
-                    raise RuntimeError("Downloaded DataFrame is empty")
-                break
-            except Exception as e:
-                msg = str(e).lower()
-                if (
-                    "rate limit" in msg or "too many requests" in msg or "empty" in msg
-                ) and attempt < retries:
-                    wait = 60 * attempt
-                    print(
-                        f"Rate‑limited or empty data (attempt {attempt}/{retries}), "
-                        f"retrying in {wait//60} min…"
-                    )
-                    time.sleep(wait)
-                else:
-                    raise RuntimeError(
-                        f"Failed to download {ticker} after {attempt} attempt(s): {e}"
-                    ) from e
-    # Use Adjusted Close for more accurate returns (accounts for dividends, splits)
-    price_col = "Adj Close" if "Adj Close" in df.columns else "Close"
+        start, end = period_to_dates(period)
+        df = fetch_data(ticker, start, end)
+    price_col = "Close"
     df["LogReturn"] = np.log(df[price_col] / df[price_col].shift(1))
     return df["LogReturn"].dropna()
 
@@ -291,6 +343,20 @@ def plot_convergence(
     print(f"Saved convergence plot → {out}")
 
 
+def compute_key_metrics(pnl, delta, var, cvar):
+    """
+    Aggregate key risk and sensitivity metrics for display.
+    """
+    mean_pnl = np.mean(pnl)
+    typical_delta = np.mean(delta) if hasattr(delta, "__len__") else delta
+    return {
+        "Mean P&L": mean_pnl,
+        "VaR (5%)": var,
+        "CVaR (5%)": cvar,
+        "Δ per $1 move": typical_delta,
+    }
+
+
 # ── CLI & Main ─────────────────────────────────────────────────────────────────
 def parse_args():
     p = argparse.ArgumentParser(
@@ -409,6 +475,18 @@ def main():
     print(f"VaR (5%):         {var:.4f}")
     print(f"CVaR (5%):        {cvar:.4f}")
     plot_pnl_histogram(pnl, var, cvar, args.outdir)
+
+    # --- Key Results Table ---
+    # Use MC Delta if available, else analytic
+    delta_for_table = (
+        mc_delta
+        if "mc_delta" in locals()
+        else bs_delta(args.S0, args.K, args.r, sigma, args.T)
+    )
+    key_metrics = compute_key_metrics(pnl, delta_for_table, var, cvar)
+    print("\n--- Key Results ---")
+    for k, v in key_metrics.items():
+        print(f"{k:18s} {v:,.4f}")
 
     # 6. Greek surface plots
     grid_S = np.linspace(0.8 * args.S0, 1.2 * args.S0, 50)
