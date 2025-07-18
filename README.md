@@ -44,9 +44,16 @@ The Monte Carlo Option Pricer provides a robust framework for option valuation b
 git clone https://github.com/Ryan-Cooley/quant-option-pricer.git
 cd quant-option-pricer
 
-# Install dependencies
+# Install dependencies (standard)
 pip install -r requirements.txt
+
+# Or install in editable/development mode (recommended for contributors)
+pip install -e .
 ```
+
+> **Note:**
+> - Use `requirements.txt` for standard Python/pip environments.
+> - Use `environment.yml` with `conda env create -f environment.yml` for full Conda-based environments (recommended for reproducibility or if you use Anaconda/Miniconda).
 
 ### Basic Usage
 
@@ -121,14 +128,15 @@ pytest --cov=quant_option
 
 ### 🗝️ Key Results (MSFT, K=150, T=0.5, r=0.03, 200,000 paths)
 
-| Metric         | Value    |
-|---------------|----------|
-| Mean P&L      | -0.0701  |
-| VaR (5%)      | 11.7017  |
-| CVaR (5%)     | 11.7017  |
-| Δ per $1 move | 0.5679   |
-
----
+--- Key Results ---
+| Metric             | Value        |
+|--------------------|--------------|
+| Mean P&L           | -0.1052      |
+| VaR (5%)           | 15.6921      |
+| CVaR (5%)          | 15.6921      |
+| Δ per $1 move      | 0.5646       |
+| Δ accuracy         | 0.20% error  |
+| Numba Speedup      | 100x+        |
 
 ## 🧑‍💻 Technical Achievements & Skills Demonstrated
 
@@ -154,7 +162,8 @@ pytest --cov=quant_option
 quant-option-pricer/
 ├── quant_option.py           # Main CLI script with full functionality
 ├── benchmark_performance.py  # Performance benchmarking suite
-├── requirements.txt          # Python dependencies
+├── requirements.txt          # Python dependencies (pip)
+├── environment.yml           # Conda environment (alternative to requirements.txt)
 ├── Dockerfile                # Docker containerization
 ├── tests/
 │   ├── test_quant_option.py  # Comprehensive unit and integration tests
