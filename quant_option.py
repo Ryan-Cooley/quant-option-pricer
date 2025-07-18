@@ -488,7 +488,8 @@ def main():
 
     # Calculate Delta accuracy (percent error)
     analytic_delta = bs_delta(args.S0, args.K, args.r, sigma, args.T)
-    delta_error = abs(delta_for_table - analytic_delta) / (abs(analytic_delta) + 1e-8) * 100
+    delta_error = abs(delta_for_table - analytic_delta) / (abs(analytic_delta) + 1e-8) \
+        * 100
 
     # Numba speedup (hardcoded, or could be computed if benchmark run)
     numba_speedup = "100x+"  # See benchmark_performance.py for details
