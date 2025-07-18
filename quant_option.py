@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import argparse
-import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,6 +9,7 @@ import yfinance as yf
 import datetime
 from numba import njit
 from pandas_datareader import data as pdr
+from typing import Optional
 
 
 # ── Data & Volatility ──────────────────────────────────────────────────────────
@@ -26,14 +26,14 @@ def fetch_data(ticker: str, start: str, end: str) -> pd.DataFrame:
         df = pdr.get_data_stooq(ticker, start=start, end=end)
         if not df.empty:
             print(f"Fetched data for {ticker} from Stooq.")
-            df = df[['Close']]
+            df = df[["Close"]]
             df = df.ffill()
-            df.index.name = 'Date'
+            df.index.name = "Date"
             # stooq returns data in descending order
             df = df.sort_index()
             return df
         else:
-            print(f"Stooq returned empty data for {ticker}.")
+            print("Stooq returned empty data for ticker.")
     except Exception as e:
         print(f"Stooq failed for {ticker}: {e}")
     # Fallback to yfinance
@@ -41,30 +41,29 @@ def fetch_data(ticker: str, start: str, end: str) -> pd.DataFrame:
         data = yf.download(ticker, start=start, end=end)
         if data.empty:
             raise ValueError(
-                f"No data found for ticker '{ticker}' in the given date range from yfinance."
+                f"No data found for ticker '{ticker}' in the given date range \
+                from yfinance."
             )
         # Handle multi-index columns (new yfinance default)
         if isinstance(data.columns, pd.MultiIndex):
-            if ('Close', ticker) in data.columns:
-                close = data[('Close', ticker)]
+            if ("Close", ticker) in data.columns:
+                close = data[("Close", ticker)]
             else:
                 raise ValueError(
                     f"'Close' column not found for ticker '{ticker}' in yfinance data."
                 )
         else:
-            if 'Close' in data.columns:
-                close = data['Close']
+            if "Close" in data.columns:
+                close = data["Close"]
             else:
-                raise ValueError(f"'Close' column not found in yfinance data.")
-        df = pd.DataFrame({'Close': close}).ffill()
-        df.index.name = 'Date'
+                raise ValueError("'Close' column not found in yfinance data.")
+        df = pd.DataFrame({"Close": close}).ffill()
+        df.index.name = "Date"
         print(f"Fetched data for {ticker} from yfinance.")
         return df
     except Exception as e:
         print(f"yfinance failed for {ticker}: {e}")
-    raise ValueError(
-        "Failed to fetch data for ticker from all available sources."
-    )
+    raise ValueError("Failed to fetch data for ticker from all available sources.")
 
 
 def period_to_dates(period: str):
@@ -72,19 +71,19 @@ def period_to_dates(period: str):
     Convert a period string like '1y', '6mo', '3d' to start and end dates.
     """
     end = datetime.datetime.today()
-    if period.endswith('y'):
+    if period.endswith("y"):
         start = end - pd.DateOffset(years=int(period[:-1]))
-    elif period.endswith('mo'):
+    elif period.endswith("mo"):
         start = end - pd.DateOffset(months=int(period[:-2]))
-    elif period.endswith('d'):
+    elif period.endswith("d"):
         start = end - pd.DateOffset(days=int(period[:-1]))
     else:
         raise ValueError(f"Unknown period format: {period}")
-    return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+    return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
 
 def download_log_returns(
-    ticker: str, period: str = "1y", csv_path: str = None, retries: int = 3
+    ticker: str, period: str = "1y", csv_path: Optional[str] = None, retries: int = 3
 ):
     """
     Download Close prices and compute daily log-returns.
@@ -340,7 +339,7 @@ def plot_convergence(
     out = os.path.join(out_dir, plot_filename)
     plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close()
-    print(f"Saved convergence plot → {out}")
+    print("Saved convergence plot → {}".format(out))
 
 
 def compute_key_metrics(pnl, delta, var, cvar):
@@ -451,8 +450,10 @@ def main():
         print(f"MC Vega estimate: {mc_vega:.4f}")
 
     # 4. Convergence plot
-    # Use unique path counts and save as a new file to avoid GitHub caching
-    path_counts = [10**3, 5 * 10**3, 10**4, args.paths]  # args.paths should be unique
+    # Use a wide range of path counts for better convergence visualization
+    path_counts = sorted(
+        set([1_000, 5_000, 10_000, 50_000, 100_000, args.paths])
+    )  # deduplicate
     plot_convergence(
         args.S0,
         args.K,

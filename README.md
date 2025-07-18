@@ -106,7 +106,7 @@ pytest --cov=quant_option
 
 ### 2. **Simulation Convergence**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/convergence_v2.png" alt="Convergence" style="display: block; margin: auto;">
-*The Monte Carlo option price converging to the analytical Black-Scholes price as the number of simulation paths increases, validating the accuracy of the simulation.*
+*The Monte Carlo option price converges smoothly to the analytical Black-Scholes price as the number of simulation paths increases (up to 200,000), validating the accuracy of the simulation.*
 
 ### 3. **P&L Distribution**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/pnl_histogram.png" alt="P&L Distribution" style="display: block; margin: auto;">
@@ -119,14 +119,14 @@ pytest --cov=quant_option
 
 ---
 
-### 🗝️ Key Results (MSFT, K=150, T=0.5, r=0.03, 10,000 paths)
+### 🗝️ Key Results (MSFT, K=150, T=0.5, r=0.03, 200,000 paths)
 
 | Metric         | Value    |
 |---------------|----------|
-| Mean P&L      | -0.3010  |
+| Mean P&L      | -0.0701  |
 | VaR (5%)      | 11.7017  |
 | CVaR (5%)     | 11.7017  |
-| Δ per $1 move | 0.5635   |
+| Δ per $1 move | 0.5679   |
 
 ---
 
