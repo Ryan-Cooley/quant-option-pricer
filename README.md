@@ -136,7 +136,7 @@ pytest --cov=quant_option
 
 ### 6. **Implied Volatility Surface**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/iv_surface.png" alt="IV Surface" style="display: block; margin: auto;">
-*3D implied volatility surface calibrated from market option prices, showing the volatility smile across moneyness and maturity.*
+*Clean 3D implied volatility surface with market data points (red spheres) and professional plasma colormap. Shows volatility structure across moneyness and maturity with summary statistics.*
 
 ---
 
