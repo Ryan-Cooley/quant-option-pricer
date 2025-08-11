@@ -9,7 +9,9 @@ import yfinance as yf
 import datetime
 from numba import njit
 from pandas_datareader import data as pdr
-from typing import Optional
+from typing import Optional, Literal
+
+OptionType = Literal["call", "put"]
 
 
 # ── Data & Volatility ──────────────────────────────────────────────────────────
@@ -119,56 +121,67 @@ def plot_and_save_returns(returns, ticker, out_dir):
 
 
 # ── Black–Scholes & Greeks ──────────────────────────────────────────────────────
-def black_scholes_call(S0, K, r, sigma, T):
-    """Analytical Black-Scholes price for a European call option."""
-    # Handle zero time case
+def black_scholes(S0, K, r, sigma, T, option_type: OptionType):
+    """Analytical Black-Scholes price for a European option."""
     if T == 0:
-        # With zero time, price is immediate payoff
-        return max(0, S0 - K)
-
-    # Handle zero volatility case
+        return max(0, S0 - K) if option_type == "call" else max(0, K - S0)
     if sigma == 0:
-        # With zero volatility, price is discounted intrinsic value
-        return max(0, S0 * np.exp(r * T) - K) * np.exp(-r * T)
+        val = (
+            S0 * np.exp(r * T) - K if option_type == "call" else K - S0 * np.exp(r * T)
+        )
+        return max(0, val) * np.exp(-r * T)
 
     d1 = (np.log(S0 / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
-    return S0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+    if option_type == "call":
+        return S0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+    elif option_type == "put":
+        return K * np.exp(-r * T) * norm.cdf(-d2) - S0 * norm.cdf(-d1)
+    else:
+        raise ValueError("option_type must be 'call' or 'put'")
 
 
-def bs_delta(S0, K, r, sigma, T):
-    """Analytical Delta of a European call option (Black-Scholes).
-    Supports scalar or array inputs."""
+def bs_delta(S0, K, r, sigma, T, option_type: OptionType):
+    """Analytical Delta of a European option."""
     S0, K, r, sigma, T = np.broadcast_arrays(S0, K, r, sigma, T)
     mask = (sigma == 0) | (T == 0)
     out = np.empty_like(S0, dtype=float)
-    # Delta is 1 if in-the-money, 0 if out-of-the-money, for zero vol/time
-    out[mask] = np.where(S0[mask] > K[mask], 1.0, 0.0)
-    # For the rest, use Black-Scholes formula
+
+    if option_type == "call":
+        out[mask] = np.where(S0[mask] > K[mask], 1.0, 0.0)
+    else:  # put
+        out[mask] = np.where(S0[mask] < K[mask], -1.0, 0.0)
+
     if np.any(~mask):
-        S0_ = S0[~mask]
-        K_ = K[~mask]
-        r_ = r[~mask]
-        sigma_ = sigma[~mask]
-        T_ = T[~mask]
+        S0_, K_, r_, sigma_, T_ = (
+            S0[~mask],
+            K[~mask],
+            r[~mask],
+            sigma[~mask],
+            T[~mask],
+        )
         d1 = (np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_) / (sigma_ * np.sqrt(T_))
-        out[~mask] = norm.cdf(d1)
+        if option_type == "call":
+            out[~mask] = norm.cdf(d1)
+        else:  # put
+            out[~mask] = norm.cdf(d1) - 1.0
     return out.item() if out.shape == () else out
 
 
 def bs_vega(S0, K, r, sigma, T):
-    """Analytical Vega of a European call option (Black-Scholes), per 1 vol unit.
-    Supports scalar or array inputs."""
+    """Analytical Vega of a European option (same for call/put)."""
     S0, K, r, sigma, T = np.broadcast_arrays(S0, K, r, sigma, T)
     mask = (sigma == 0) | (T == 0)
     out = np.empty_like(S0, dtype=float)
     out[mask] = 0.0
     if np.any(~mask):
-        S0_ = S0[~mask]
-        K_ = K[~mask]
-        r_ = r[~mask]
-        sigma_ = sigma[~mask]
-        T_ = T[~mask]
+        S0_, K_, r_, sigma_, T_ = (
+            S0[~mask],
+            K[~mask],
+            r[~mask],
+            sigma[~mask],
+            T[~mask],
+        )
         d1 = (np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_) / (sigma_ * np.sqrt(T_))
         out[~mask] = S0_ * norm.pdf(d1) * np.sqrt(T_)
     return out.item() if out.shape == () else out
@@ -176,9 +189,9 @@ def bs_vega(S0, K, r, sigma, T):
 
 # ── Monte Carlo with Numba ─────────────────────────────────────────────────────
 @njit
-def simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed):
+def simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed, option_type_is_call):
     """
-    Simulate n_paths of GBM and return the discounted mean payoff for a European call.
+    Simulate n_paths of GBM and return the discounted mean payoff.
     Uses log-Euler discretization. Numba-accelerated for speed.
     """
     np.random.seed(seed)
@@ -191,14 +204,21 @@ def simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed):
             z = random_numbers[i, j]
             logS += (r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z
         ST = S0 * np.exp(logS)
-        payoff = max(ST - K, 0.0)
+        if option_type_is_call:
+            payoff = max(ST - K, 0.0)
+        else:
+            payoff = max(K - ST, 0.0)
         payoff_sum += payoff
     return np.exp(-r * T) * (payoff_sum / n_paths)
 
 
-def monte_carlo_price(S0, K, r, sigma, T, steps, n_paths, seed):
+def monte_carlo_price(
+    S0, K, r, sigma, T, steps, n_paths, seed, option_type: OptionType
+):
     """Wrapper for the Numba-accelerated MC pricer."""
-    return simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed)
+    return simulate_gbm_numba(
+        S0, K, r, sigma, T, steps, n_paths, seed, option_type == "call"
+    )
 
 
 def simulate_gbm_paths(S0, r, sigma, T, steps, n_paths, seed):
@@ -210,38 +230,31 @@ def simulate_gbm_paths(S0, r, sigma, T, steps, n_paths, seed):
         + sigma * np.sqrt(dt) * np.random.randn(n_paths, steps),
         axis=1,
     )
-    ST = np.exp(logS[:, -1])
-    return ST
+    return np.exp(logS[:, -1])
 
 
 def mc_greek_bump(func, param_name, bump, *args, **kwargs):
-    """
-    Estimate a Greek via central finite difference: (f(x+ε) - f(x-ε)) / (2ε).
-    param_name: parameter to bump (e.g., 'S0', 'sigma')
-    bump: bump size
-    args: positional arguments to func
-    kwargs: keyword arguments to func
-    """
-    params = dict(zip(func.__code__.co_varnames, args))
-    up_args = [
-        params[name] + bump if name == param_name else val
-        for name, val in zip(func.__code__.co_varnames, args)
-    ]
-    down_args = [
-        params[name] - bump if name == param_name else val
-        for name, val in zip(func.__code__.co_varnames, args)
-    ]
-    up = func(*up_args, **kwargs)
-    down = func(*down_args, **kwargs)
+    """Estimate a Greek via central finite difference."""
+    # Create a dictionary of the function's arguments
+    arg_names = func.__code__.co_varnames[: func.__code__.co_argcount]
+    params = dict(zip(arg_names, args))
+    params.update(kwargs)
+
+    # Bump up
+    up_params = params.copy()
+    up_params[param_name] += bump
+    up = func(**up_params)
+
+    # Bump down
+    down_params = params.copy()
+    down_params[param_name] -= bump
+    down = func(**down_params)
+
     return (up - down) / (2 * bump)
 
 
 def compute_var_cvar(pnl, alpha=0.05):
-    """
-    Compute VaR and CVaR at confidence level alpha using percentile definitions.
-    VaR = –P&L at the alpha-quantile
-    CVaR = –mean(P&L below that quantile)
-    """
+    """Compute VaR and CVaR at confidence level alpha."""
     var_level = np.percentile(pnl, alpha * 100)
     var = -var_level
     tail = pnl[pnl <= var_level]
@@ -249,7 +262,7 @@ def compute_var_cvar(pnl, alpha=0.05):
     return var, cvar
 
 
-def plot_pnl_histogram(pnl, var, cvar, out_dir):
+def plot_pnl_histogram(pnl, var, cvar, out_dir, option_type: OptionType):
     """Plot histogram of P&L with VaR and CVaR marked."""
     plt.figure(figsize=(8, 5))
     plt.hist(pnl, bins=50, color="skyblue", edgecolor="k", alpha=0.7)
@@ -257,7 +270,7 @@ def plot_pnl_histogram(pnl, var, cvar, out_dir):
     plt.axvline(-cvar, color="purple", linestyle=":", label=f"CVaR (5%): {-cvar:.2f}")
     plt.xlabel("P&L at Expiry")
     plt.ylabel("Frequency")
-    plt.title("P&L Distribution at Expiry (MC)")
+    plt.title(f"P&L Distribution for {option_type.title()} Option (MC)")
     plt.legend()
     plt.tight_layout()
     out = os.path.join(out_dir, "pnl_histogram.png")
@@ -271,14 +284,18 @@ def plot_greek_surface(greek_fn, var_name, grid_S, grid_sigma, args, out_dir):
     from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
     S_grid, sigma_grid = np.meshgrid(grid_S, grid_sigma)
-    Z = greek_fn(S_grid, args.K, args.r, sigma_grid, args.T)
+    if var_name == "Vega":
+        Z = greek_fn(S_grid, args.K, args.r, sigma_grid, args.T)
+    else:
+        Z = greek_fn(S_grid, args.K, args.r, sigma_grid, args.T, args.option_type)
+
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, projection="3d")
     ax.plot_surface(S_grid, sigma_grid, Z, cmap="viridis", alpha=0.85)
     ax.set_xlabel("Spot (S₀)")
     ax.set_ylabel("Volatility (σ)")
     ax.set_zlabel(var_name)
-    plt.title(f"{var_name} Surface")
+    plt.title(f"{var_name} Surface for {args.option_type.title()} Option")
     plt.tight_layout()
     out = os.path.join(out_dir, f"{var_name.lower()}_surface.png")
     plt.savefig(out)
@@ -288,72 +305,43 @@ def plot_greek_surface(greek_fn, var_name, grid_S, grid_sigma, args, out_dir):
 
 # ── Convergence Plot ────────────────────────────────────────────────────────────
 def plot_convergence(
-    S0,
-    K,
-    r,
-    sigma,
-    T,
-    steps,
-    path_counts,
-    seed,
-    out_dir,
-    plot_filename="convergence.png",
+    S0, K, r, sigma, T, steps, path_counts, seed, out_dir, option_type: OptionType
 ):
     """Plot MC price convergence vs. Black-Scholes analytical price."""
-    bs = black_scholes_call(S0, K, r, sigma, T)
+    bs = black_scholes(S0, K, r, sigma, T, option_type)
     estimates = [
-        monte_carlo_price(S0, K, r, sigma, T, steps, n, seed + i)
+        monte_carlo_price(S0, K, r, sigma, T, steps, n, seed + i, option_type)
         for i, n in enumerate(path_counts)
     ]
-    # Print convergence details for debugging
     print("\n--- Convergence Analysis ---")
-    print(f"Black-Scholes price: {bs:.4f}")
-    for i, (n_paths, estimate) in enumerate(zip(path_counts, estimates)):
-        error = abs(estimate - bs) / bs * 100
+    print(f"Black-Scholes {option_type} price: {bs:.4f}")
+    for n_paths, estimate in zip(path_counts, estimates):
+        error = abs(estimate - bs) / bs * 100 if bs != 0 else 0
         print(f"{n_paths:,} paths: {estimate:.4f} (error: {error:.2f}%)")
+
     plt.figure(figsize=(10, 6))
-    plt.plot(
-        path_counts,
-        estimates,
-        "o-",
-        label="MC estimate",
-        linewidth=2,
-        markersize=8,
-    )
+    plt.plot(path_counts, estimates, "o-", label="MC estimate")
     plt.hlines(
         bs,
         path_counts[0],
         path_counts[-1],
         linestyles="--",
-        label=(f"Black–Scholes: {bs:.4f}"),
+        label=f"Black–Scholes: {bs:.4f}",
         colors="red",
-        linewidth=2,
     )
     plt.xscale("log")
     plt.xlabel("Number of paths")
     plt.ylabel("Option price")
-    plt.title(f"MC Convergence vs Black–Scholes (S₀={S0}, K={K}, σ={sigma:.1%})")
+    plt.title(
+        f"MC Convergence for {option_type.title()} (S₀={S0}, K={K}, σ={sigma:.1%})"
+    )
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    out = os.path.join(out_dir, plot_filename)
+    out = os.path.join(out_dir, "convergence_v2.png")
     plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close()
-    print("Saved convergence plot → {}".format(out))
-
-
-def compute_key_metrics(pnl, delta, var, cvar):
-    """
-    Aggregate key risk and sensitivity metrics for display.
-    """
-    mean_pnl = np.mean(pnl)
-    typical_delta = np.mean(delta) if hasattr(delta, "__len__") else delta
-    return {
-        "Mean P&L": mean_pnl,
-        "VaR (5%)": var,
-        "CVaR (5%)": cvar,
-        "Δ per $1 move": typical_delta,
-    }
+    print(f"Saved convergence plot → {out}")
 
 
 # ── CLI & Main ─────────────────────────────────────────────────────────────────
@@ -363,6 +351,13 @@ def parse_args():
     )
     p.add_argument(
         "--ticker", type=str, default="AAPL", help="Ticker for volatility estimation"
+    )
+    p.add_argument(
+        "--option-type",
+        type=str,
+        default="call",
+        choices=["call", "put"],
+        help="Type of option to price",
     )
     p.add_argument("--S0", type=float, default=150.0, help="Spot price")
     p.add_argument("--K", type=float, default=150.0, help="Strike price")
@@ -395,54 +390,68 @@ def main():
     # 1. Volatility estimation
     try:
         returns = download_log_returns(args.ticker, csv_path=args.csv)
+        sigma = annualized_vol(returns)
+        print(f"Est. annualized σ for {args.ticker}: {sigma:.2%}")
+        plot_and_save_returns(returns, args.ticker, args.outdir)
     except Exception as e:
         print(f"Error fetching returns: {e}")
         return
-    plot_and_save_returns(returns, args.ticker, args.outdir)
-    sigma = annualized_vol(returns)
-    print(f"Est. annualized σ for {args.ticker}: {sigma:.2%}")
 
     # 2. Pricing
-    bs_price = black_scholes_call(args.S0, args.K, args.r, sigma, args.T)
+    bs_price = black_scholes(args.S0, args.K, args.r, sigma, args.T, args.option_type)
     mc_price = monte_carlo_price(
-        args.S0, args.K, args.r, sigma, args.T, args.steps, args.paths, args.seed
+        args.S0,
+        args.K,
+        args.r,
+        sigma,
+        args.T,
+        args.steps,
+        args.paths,
+        args.seed,
+        args.option_type,
     )
-    print(f"Black–Scholes call price:    {bs_price:.4f}")
-    print(f"Monte Carlo call price ({args.paths:,} paths): {mc_price:.4f}")
+    print(f"\n--- Pricing Results ({args.option_type.title()}) ---")
+    print(f"Black–Scholes price:    {bs_price:.4f}")
+    print(f"Monte Carlo price ({args.paths:,} paths): {mc_price:.4f}")
 
     # 3. Greeks (optional)
     if args.greeks:
         print("\n--- Greeks ---")
-        analytic_delta = bs_delta(args.S0, args.K, args.r, sigma, args.T)
+        analytic_delta = bs_delta(
+            args.S0, args.K, args.r, sigma, args.T, args.option_type
+        )
         analytic_vega = bs_vega(args.S0, args.K, args.r, sigma, args.T)
-        # MC Greeks via bump
+
         eps_S = args.S0 * 1e-4 if args.S0 != 0 else 1e-4
-        eps_sigma = sigma * 1e-4 if sigma != 0 else 1e-4
         mc_delta = mc_greek_bump(
             monte_carlo_price,
             "S0",
             eps_S,
-            args.S0,
-            args.K,
-            args.r,
-            sigma,
-            args.T,
-            args.steps,
-            args.paths,
-            args.seed,
+            S0=args.S0,
+            K=args.K,
+            r=args.r,
+            sigma=sigma,
+            T=args.T,
+            steps=args.steps,
+            n_paths=args.paths,
+            seed=args.seed,
+            option_type=args.option_type,
         )
+
+        eps_sigma = sigma * 1e-4 if sigma != 0 else 1e-4
         mc_vega = mc_greek_bump(
             monte_carlo_price,
             "sigma",
             eps_sigma,
-            args.S0,
-            args.K,
-            args.r,
-            sigma,
-            args.T,
-            args.steps,
-            args.paths,
-            args.seed,
+            S0=args.S0,
+            K=args.K,
+            r=args.r,
+            sigma=sigma,
+            T=args.T,
+            steps=args.steps,
+            n_paths=args.paths,
+            seed=args.seed,
+            option_type=args.option_type,
         )
         print(f"Analytic Δ:       {analytic_delta:.4f}")
         print(f"MC Δ estimate:    {mc_delta:.4f}")
@@ -450,10 +459,7 @@ def main():
         print(f"MC Vega estimate: {mc_vega:.4f}")
 
     # 4. Convergence plot
-    # Use a wide range of path counts for better convergence visualization
-    path_counts = sorted(
-        set([1_000, 5_000, 10_000, 50_000, 100_000, args.paths])
-    )  # deduplicate
+    path_counts = sorted(set([1_000, 5_000, 10_000, 50_000, 100_000, args.paths]))
     plot_convergence(
         args.S0,
         args.K,
@@ -464,52 +470,31 @@ def main():
         path_counts,
         args.seed,
         args.outdir,
-        plot_filename="convergence_v2.png",
+        args.option_type,
     )
 
     # 5. VaR/CVaR and P&L histogram
     ST = simulate_gbm_paths(
         args.S0, args.r, sigma, args.T, args.steps, args.paths, args.seed
     )
-    pnl = np.exp(-args.r * args.T) * np.maximum(ST - args.K, 0) - bs_price
+    if args.option_type == "call":
+        payoff = np.maximum(ST - args.K, 0)
+    else:
+        payoff = np.maximum(args.K - ST, 0)
+
+    pnl = np.exp(-args.r * args.T) * payoff - bs_price
     var, cvar = compute_var_cvar(pnl)
+    print("\n--- Risk Metrics ---")
     print(f"VaR (5%):         {var:.4f}")
     print(f"CVaR (5%):        {cvar:.4f}")
-    plot_pnl_histogram(pnl, var, cvar, args.outdir)
-
-    # --- Key Results Table ---
-    # Use MC Delta if available, else analytic
-    delta_for_table = (
-        mc_delta
-        if "mc_delta" in locals()
-        else bs_delta(args.S0, args.K, args.r, sigma, args.T)
-    )
-    key_metrics = compute_key_metrics(pnl, delta_for_table, var, cvar)
-
-    # Calculate Delta accuracy (percent error)
-    analytic_delta = bs_delta(args.S0, args.K, args.r, sigma, args.T)
-    delta_error = (
-        abs(delta_for_table - analytic_delta) / (abs(analytic_delta) + 1e-8) * 100
-    )
-
-    # Numba speedup (hardcoded, or could be computed if benchmark run)
-    numba_speedup = "100x+"  # See benchmark_performance.py for details
-
-    print("\n--- Key Results ---")
-    print("| Metric             | Value         |")
-    print("|--------------------|--------------|")
-    print(f"| Mean P&L           | {key_metrics['Mean P&L']:.4f}      |")
-    print(f"| VaR (5%)           | {key_metrics['VaR (5%)']:.4f}      |")
-    print(f"| CVaR (5%)          | {key_metrics['CVaR (5%)']:.4f}      |")
-    print(f"| Δ per $1 move      | {key_metrics['Δ per $1 move']:.4f}       |")
-    print(f"| Δ accuracy         | {delta_error:.2f}% error   |")
-    print(f"| Numba Speedup      | {numba_speedup}        |")
+    plot_pnl_histogram(pnl, var, cvar, args.outdir, args.option_type)
 
     # 6. Greek surface plots
-    grid_S = np.linspace(0.8 * args.S0, 1.2 * args.S0, 50)
-    grid_sigma = np.linspace(0.5 * sigma, 1.5 * sigma, 50)
-    plot_greek_surface(bs_delta, "Delta", grid_S, grid_sigma, args, args.outdir)
-    plot_greek_surface(bs_vega, "Vega", grid_S, grid_sigma, args, args.outdir)
+    if args.greeks:
+        grid_S = np.linspace(0.8 * args.S0, 1.2 * args.S0, 50)
+        grid_sigma = np.linspace(0.5 * sigma, 1.5 * sigma, 50)
+        plot_greek_surface(bs_delta, "Delta", grid_S, grid_sigma, args, args.outdir)
+        plot_greek_surface(bs_vega, "Vega", grid_S, grid_sigma, args, args.outdir)
 
     print("\nAll results and plots saved. Project complete!")
 
