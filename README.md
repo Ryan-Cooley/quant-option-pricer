@@ -128,21 +128,38 @@ pytest --cov=quant_option
 
 ### 🗝️ Key Results (MSFT, K=150, T=0.5, r=0.03, 200,000 paths)
 
---- Key Results ---
 | Metric             | Value        |
 |--------------------|--------------|
-| Mean P&L           | -0.1052      |
-| VaR (5%)           | 15.6921      |
-| CVaR (5%)          | 15.6921      |
-| Δ per $1 move      | 0.5646       |
-| Δ accuracy         | 0.20% error  |
-| Numba Speedup      | 100x+        |
+| **BS Price**       | **11.5644**  |
+| **MC Price**       | **11.4954**  |
+| VaR (5%)           | 11.5644      |
+| CVaR (5%)          | 11.5644      |
+| **Analytic Δ**     | **0.5688**   |
+| **MC Δ**           | **0.5680**   |
+
+*Note on VaR/CVaR: For at-the-money options like this, the probability of the option expiring worthless (~50% in this case) is greater than the VaR threshold (5%). This causes the 5th percentile loss (VaR) to be the maximum possible loss (the option premium), and the average loss beyond that point (CVaR) is therefore the same value.*
+
+---
+
+## 🚀 Performance: NumPy vs. Numba
+
+To quantify the impact of Numba's Just-in-Time (JIT) compilation, a benchmark was run comparing the Numba-accelerated Monte Carlo engine against a standard NumPy implementation. The results demonstrate a significant performance gain for any substantial number of simulation paths.
+
+| Paths      | Python Time (s) | Numba Time (s) | Speedup |
+|------------|-----------------|----------------|---------|
+| 1,000      | 0.128           | 0.948          | 0.1x    |
+| 5,000      | 0.649           | 0.017          | **37.7x**   |
+| 10,000     | 1.313           | 0.036          | **36.1x**   |
+| 50,000     | 6.522           | 0.182          | **35.9x**   |
+| 100,000    | 13.346          | 0.371          | **36.0x**   |
+
+*Note: The initial 0.1x speedup on the first run is expected and demonstrates Numba's one-time JIT compilation overhead. For all subsequent and larger workloads, the acceleration is substantial, averaging around **36-38x**.*
 
 ## 🧑‍💻 Technical Achievements & Skills Demonstrated
 
 ### Technical Achievements
 
-- **Engineered a High-Performance Monte Carlo Engine**: Developed a sophisticated financial simulator in Python, leveraging Numba for JIT compilation to achieve a >100x speedup over native Python, enabling large-scale simulations.
+- **Engineered a High-Performance Monte Carlo Engine**: Developed a sophisticated financial simulator in Python, leveraging Numba for JIT compilation to achieve a **~38x speedup** over native Python, enabling large-scale simulations.
 - **Implemented a Robust Testing Framework**: Created a comprehensive test suite with `pytest` to validate the analytical Black-Scholes model and verify the stochastic convergence and reproducibility of the Monte Carlo engine.
 - **Automated Market Data & Risk Analysis Pipeline**: Built a data pipeline that ingests historical market data from `yfinance`, calculates annualized volatility, and feeds it into a risk analysis module that computes and visualizes VaR, CVaR, and the Greeks.
 - **Ensured Full Reproducibility with Docker & CI/CD**: Containerized the application with Docker and configured a GitHub Actions workflow for automated testing and linting, ensuring consistent and reliable results in any environment.
