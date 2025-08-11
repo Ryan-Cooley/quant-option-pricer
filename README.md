@@ -263,19 +263,50 @@ Sample (moneyness = K/S, maturity in years), extracted from `plots/iv_grid.csv` 
 
 ```
 quant-option-pricer/
-├── quant_option.py           # Main CLI script with enhanced risk analysis
-├── benchmark_performance.py  # Performance benchmarking suite
-├── requirements.txt          # Python dependencies (pip)
-├── environment.yml           # Conda environment (alternative to requirements.txt)
-├── Dockerfile                # Docker containerization
-├── tests/
-│   ├── test_quant_option.py  # Comprehensive unit and integration tests
-│   └── test_data.csv         # Static test data for reproducible testing
-├── notebooks/
-│   └── QuantOptionDemo.ipynb # Interactive Jupyter notebook with enhanced analysis
-├── plots/                    # Directory for generated output figures
+├── pyproject.toml              # PEP 621 packaging configuration
+├── CHANGELOG.md                # Release notes and version history
+├── README.md                   # Project documentation
+├── requirements.txt            # Python dependencies (pip)
+├── environment.yml             # Conda environment (alternative)
+├── Dockerfile                  # Docker containerization
+├── quant_option.py             # Main CLI script (legacy interface)
+├── benchmark_performance.py    # Legacy benchmark script
+├── src/quant/                  # Core quantitative finance package
+│   ├── __init__.py             # Package initialization
+│   ├── pricing.py              # BS pricing, MC simulation, Greeks
+│   ├── hedging.py              # Delta-hedging P&L simulator
+│   └── iv.py                   # Implied volatility solver
+├── scripts/                    # CLI tools and utilities
+│   ├── run_hedge.py            # Delta-hedging simulation CLI
+│   ├── calibrate_surface.py    # IV surface generation
+│   └── benchmark_performance.py # NumPy vs Numba benchmarks
+├── notebooks/                  # Interactive analysis
+│   ├── 00_quickstart.ipynb     # End-to-end demo notebook
+│   └── QuantOptionDemo.ipynb   # Comprehensive analysis notebook
+├── examples/                   # Demo scripts
+│   └── quickstart.py           # Standalone demo script
+├── data/                       # Sample data files
+│   └── iv_demo.csv             # Option data for IV surface demo
+├── tests/                      # Comprehensive test suite
+│   ├── test_pricing.py         # Core pricing function tests
+│   ├── test_hedging.py         # Delta-hedging simulation tests
+│   ├── test_iv.py              # Implied volatility tests
+│   ├── test_surface_smoke.py   # IV surface smoke tests
+│   ├── test_benchmark_smoke.py # Performance benchmark tests
+│   ├── test_quant_option.py    # Legacy CLI tests
+│   └── test_data.csv           # Static test data
+├── plots/                      # Generated visualizations
+│   ├── hedge_pnl.png           # Delta-hedging P&L distribution
+│   ├── iv_surface.png          # Implied volatility surface
+│   ├── delta_surface.png       # Delta sensitivity surface
+│   ├── vega_surface.png        # Vega sensitivity surface
+│   └── convergence_v2.png      # MC convergence analysis
+├── benchmarks/                 # Performance analysis artifacts
+│   ├── benchmarks.csv          # Raw benchmark data
+│   ├── benchmarks.png          # Performance visualization
+│   └── README_snippet.md       # Markdown performance table
 └── .github/
-    └── workflows/ci.yml      # GitHub Actions CI/CD pipeline
+    └── workflows/ci.yml        # CI/CD pipeline with artifacts
 ```
 
 ---
