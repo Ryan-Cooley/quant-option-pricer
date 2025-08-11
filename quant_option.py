@@ -262,6 +262,179 @@ def compute_var_cvar(pnl, alpha=0.05):
     return var, cvar
 
 
+def enhanced_risk_analysis(pnl, payoff, bs_price, option_type="call", alpha=0.05):
+    """
+    Enhanced risk analysis with comprehensive metrics.
+
+    Returns a dictionary with detailed risk metrics and explanations.
+    """
+    var, cvar = compute_var_cvar(pnl, alpha)
+
+    # Calculate additional risk metrics
+    prob_worthless = (payoff == 0).mean()
+    expected_pnl = pnl.mean()
+    pnl_std = pnl.std()
+    max_loss = pnl.min()
+    max_gain = pnl.max()
+
+    # Multiple confidence levels
+    confidence_levels = [0.01, 0.05, 0.10, 0.25]
+    var_cvar_multiple = {}
+    for conf_level in confidence_levels:
+        var_conf, cvar_conf = compute_var_cvar(pnl, conf_level)
+        var_cvar_multiple[conf_level] = (var_conf, cvar_conf)
+
+    # Explanation of VaR/CVaR behavior
+    explanation = {
+        "var_equals_cvar": var == cvar,
+        "prob_worthless_greater_than_alpha": prob_worthless > alpha,
+        "max_loss_equals_bs_price": abs(max_loss + bs_price) < 1e-6,
+        "reason": "At-the-money options have ~50% probability of expiring worthless, "
+        "making the 5th percentile loss equal to the maximum loss (option premium).",
+    }
+
+    return {
+        "var": var,
+        "cvar": cvar,
+        "prob_worthless": prob_worthless,
+        "expected_pnl": expected_pnl,
+        "pnl_std": pnl_std,
+        "max_loss": max_loss,
+        "max_gain": max_gain,
+        "var_cvar_multiple": var_cvar_multiple,
+        "explanation": explanation,
+    }
+
+
+def print_enhanced_risk_analysis(
+    risk_metrics, option_type="call", S0=150, K=150, r=0.01, sigma=0.25, T=1.0
+):
+    """Print formatted enhanced risk analysis results."""
+    print("=== ENHANCED RISK ANALYSIS ===")
+    print(f"Option Type: {option_type.title()}")
+    print(f"Parameters: S₀={S0}, K={K}, r={r:.1%}, σ={sigma:.1%}, T={T}")
+    print()
+
+    print("Risk Metrics (95% confidence):")
+    print(f"VaR (5%): ${risk_metrics['var']:.4f}")
+    print(f"CVaR (5%): ${risk_metrics['cvar']:.4f}")
+    print()
+
+    print("Detailed Risk Analysis:")
+    print(f"Probability of Expiring Worthless: {risk_metrics['prob_worthless']:.1%}")
+    print(f"Expected P&L: ${risk_metrics['expected_pnl']:.4f}")
+    print(f"P&L Standard Deviation: ${risk_metrics['pnl_std']:.4f}")
+    print(f"Maximum Loss: ${risk_metrics['max_loss']:.4f}")
+    print(f"Maximum Gain: ${risk_metrics['max_gain']:.4f}")
+    print()
+
+    print("VaR/CVaR at Different Confidence Levels:")
+    for alpha, (var_alpha, cvar_alpha) in risk_metrics["var_cvar_multiple"].items():
+        print(f"  {alpha*100:.0f}%: VaR=${var_alpha:.4f}, CVaR=${cvar_alpha:.4f}")
+    print()
+
+    if risk_metrics["explanation"]["var_equals_cvar"]:
+        print("⚠️  VaR = CVaR Explanation:")
+        print(f"   {risk_metrics['explanation']['reason']}")
+        print(
+            "   This is mathematically correct but not very informative for "
+            "risk analysis."
+        )
+        print(
+            "   Consider using out-of-the-money options or different confidence levels."
+        )
+        print()
+
+
+def plot_enhanced_risk_analysis(pnl, payoff, risk_metrics, option_type="call"):
+    """Create enhanced risk analysis plots."""
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
+
+    # P&L distribution
+    ax1.hist(pnl, bins=50, color="skyblue", edgecolor="k", alpha=0.7, density=True)
+    ax1.axvline(
+        -risk_metrics["var"],
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f"VaR (5%): ${-risk_metrics['var']:.2f}",
+    )
+    ax1.axvline(
+        -risk_metrics["cvar"],
+        color="purple",
+        linestyle=":",
+        linewidth=2,
+        label=f"CVaR (5%): ${-risk_metrics['cvar']:.2f}",
+    )
+    ax1.axvline(
+        risk_metrics["expected_pnl"],
+        color="green",
+        linestyle="-",
+        linewidth=2,
+        label=f"Mean: ${risk_metrics['expected_pnl']:.2f}",
+    )
+    ax1.set_xlabel("P&L at Expiry")
+    ax1.set_ylabel("Density")
+    ax1.set_title(f"P&L Distribution for {option_type.title()} Option")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # Payoff distribution
+    ax2.hist(
+        payoff, bins=30, color="lightgreen", edgecolor="k", alpha=0.7, density=True
+    )
+    ax2.axvline(
+        payoff.mean(),
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f"Mean Payoff: ${payoff.mean():.2f}",
+    )
+    ax2.set_xlabel("Payoff at Expiry")
+    ax2.set_ylabel("Density")
+    ax2.set_title(f"Payoff Distribution for {option_type.title()} Option")
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+
+    # Cumulative P&L distribution
+    sorted_pnl = np.sort(pnl)
+    cumulative_prob = np.arange(1, len(sorted_pnl) + 1) / len(sorted_pnl)
+    ax3.plot(sorted_pnl, cumulative_prob, linewidth=2, color="blue")
+    ax3.axhline(0.05, color="red", linestyle="--", label="5% threshold")
+    ax3.axvline(
+        -risk_metrics["var"],
+        color="red",
+        linestyle=":",
+        label=f"VaR: ${-risk_metrics['var']:.2f}",
+    )
+    ax3.set_xlabel("P&L")
+    ax3.set_ylabel("Cumulative Probability")
+    ax3.set_title("Cumulative P&L Distribution")
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+
+    # Explanation of VaR/CVaR behavior
+    ax4.text(0.1, 0.8, "Why VaR = CVaR = BS Price:", fontsize=12, fontweight="bold")
+    ax4.text(
+        0.1,
+        0.7,
+        f'• ~{risk_metrics["prob_worthless"]:.1%} of paths expire worthless',
+        fontsize=10,
+    )
+    ax4.text(0.1, 0.6, "• 5th percentile loss = maximum loss", fontsize=10)
+    ax4.text(0.1, 0.5, f'• VaR (5%) = -${risk_metrics["var"]:.2f}', fontsize=10)
+    ax4.text(0.1, 0.4, f'• CVaR (5%) = -${risk_metrics["cvar"]:.2f}', fontsize=10)
+    ax4.text(0.1, 0.3, "• This is mathematically correct", fontsize=10)
+    ax4.text(0.1, 0.2, "• but not very informative", fontsize=10)
+    ax4.set_xlim(0, 1)
+    ax4.set_ylim(0, 1)
+    ax4.axis("off")
+    ax4.set_title("VaR/CVaR Explanation")
+
+    plt.tight_layout()
+    return fig
+
+
 def plot_pnl_histogram(pnl, var, cvar, out_dir, option_type: OptionType):
     """Plot histogram of P&L with VaR and CVaR marked."""
     plt.figure(figsize=(8, 5))
@@ -473,7 +646,7 @@ def main():
         args.option_type,
     )
 
-    # 5. VaR/CVaR and P&L histogram
+    # 5. Enhanced Risk Analysis
     ST = simulate_gbm_paths(
         args.S0, args.r, sigma, args.T, args.steps, args.paths, args.seed
     )
@@ -483,11 +656,26 @@ def main():
         payoff = np.maximum(args.K - ST, 0)
 
     pnl = np.exp(-args.r * args.T) * payoff - bs_price
-    var, cvar = compute_var_cvar(pnl)
-    print("\n--- Risk Metrics ---")
-    print(f"VaR (5%):         {var:.4f}")
-    print(f"CVaR (5%):        {cvar:.4f}")
-    plot_pnl_histogram(pnl, var, cvar, args.outdir, args.option_type)
+
+    # Enhanced risk analysis
+    risk_metrics = enhanced_risk_analysis(pnl, payoff, bs_price, args.option_type)
+    print_enhanced_risk_analysis(
+        risk_metrics, args.option_type, args.S0, args.K, args.r, sigma, args.T
+    )
+
+    # Create enhanced risk analysis plots
+    plot_enhanced_risk_analysis(pnl, payoff, risk_metrics, args.option_type)
+    plt.savefig(
+        os.path.join(args.outdir, "enhanced_risk_analysis.png"),
+        dpi=150,
+        bbox_inches="tight",
+    )
+    plt.close()
+
+    # Also create the original P&L histogram for compatibility
+    plot_pnl_histogram(
+        pnl, risk_metrics["var"], risk_metrics["cvar"], args.outdir, args.option_type
+    )
 
     # 6. Greek surface plots
     if args.greeks:

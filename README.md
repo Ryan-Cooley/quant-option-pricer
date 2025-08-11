@@ -67,11 +67,11 @@ python quant_option.py --ticker MSFT
 python quant_option.py --ticker TSLA --option-type put --K 200 --T 0.5 --r 0.03 --paths 50000
 ```
 
-*Sample outputs in this README use MSFT as the ticker.*
+*Sample outputs in this README use AAPL as the ticker.*
 
 ### Interactive Notebook
 
-For a more interactive experience, a Jupyter notebook is provided in the `notebooks` directory. The default ticker in the notebook is set to MSFT for consistency with the sample outputs, but you can change it to any valid symbol.
+For a more interactive experience, a Jupyter notebook is provided in the `notebooks` directory. The default ticker in the notebook is set to AAPL for consistency with the sample outputs, but you can change it to any valid symbol.
 
 ```bash
 # Launch the Jupyter notebook
@@ -119,6 +119,10 @@ pytest --cov=quant_option
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/pnl_histogram.png" alt="P&L Distribution" style="display: block; margin: auto;">
 *The distribution of potential profit and loss at option expiry, with VaR and CVaR metrics highlighted to provide a clear view of downside risk.*
 
+### 3b. **Enhanced Risk Analysis**
+<img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/enhanced_risk_analysis.png" alt="Enhanced Risk Analysis" style="display: block; margin: auto;">
+*A comprehensive view combining: (1) P&L distribution with VaR/CVaR and mean, (2) payoff distribution, (3) cumulative P&L distribution with the 5% threshold, and (4) an explanation panel clarifying why VaR and CVaR equal the option premium for at-the-money options.*
+
 ### 4. **Greeks Sensitivity Surfaces**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/delta_surface.png" alt="Delta Surface" style="display: block; margin: auto;">
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/vega_surface.png" alt="Vega Surface" style="display: block; margin: auto;">
@@ -126,18 +130,43 @@ pytest --cov=quant_option
 
 ---
 
-### 🗝️ Key Results (MSFT, K=150, T=0.5, r=0.03, 200,000 paths)
+### 🗝️ Key Results (AAPL, K=150, T=1.0, r=0.01, 50,000 paths)
 
 | Metric             | Value        |
 |--------------------|--------------|
-| **BS Price**       | **11.5644**  |
-| **MC Price**       | **11.4954**  |
-| VaR (5%)           | 11.5644      |
-| CVaR (5%)          | 11.5644      |
-| **Analytic Δ**     | **0.5688**   |
-| **MC Δ**           | **0.5680**   |
+| **BS Price**       | **19.6754**  |
+| **MC Price**       | **19.0907**  |
+| VaR (5%)           | 19.6754      |
+| CVaR (5%)          | 19.6754      |
+| **Analytic Δ**     | **0.5757**   |
+| **MC Δ**           | **0.5731**   |
 
-*Note on VaR/CVaR: For at-the-money options like this, the probability of the option expiring worthless (~50% in this case) is greater than the VaR threshold (5%). This causes the 5th percentile loss (VaR) to be the maximum possible loss (the option premium), and the average loss beyond that point (CVaR) is therefore the same value.*
+**Enhanced Risk Analysis:**
+- **Probability of Expiring Worthless**: 55.5%
+- **Expected P&L**: -$0.5846
+- **P&L Standard Deviation**: $33.6852
+- **Maximum Loss**: -$19.6754 (full premium)
+- **Maximum Gain**: $462.8489
+
+**VaR/CVaR at Different Confidence Levels:**
+- 1%: VaR=$19.6754, CVaR=$19.6754
+- 5%: VaR=$19.6754, CVaR=$19.6754
+- 10%: VaR=$19.6754, CVaR=$19.6754
+- 25%: VaR=$19.6754, CVaR=$19.6754
+
+**⚠️ Note on VaR/CVaR Calculation:**
+
+The VaR and CVaR values equal the BS price because:
+
+1. **At-the-money option**: For S₀=K=150, approximately 55% of Monte Carlo paths result in the option expiring worthless
+2. **5th percentile threshold**: Since 55% > 5%, the 5th percentile loss equals the maximum possible loss (the full option premium)
+3. **Expected behavior**: This is mathematically correct but not very informative for risk analysis
+
+**For more meaningful VaR/CVaR, consider:**
+- Out-of-the-money options (higher probability of expiring worthless)
+- Different confidence levels (e.g., 1% instead of 5%)
+- P&L from seller's perspective
+- Portfolio-level risk metrics
 
 ---
 
@@ -161,7 +190,7 @@ To quantify the impact of Numba's Just-in-Time (JIT) compilation, a benchmark wa
 
 - **Engineered a High-Performance Monte Carlo Engine**: Developed a sophisticated financial simulator in Python, leveraging Numba for JIT compilation to achieve a **~38x speedup** over native Python, enabling large-scale simulations.
 - **Implemented a Robust Testing Framework**: Created a comprehensive test suite with `pytest` to validate the analytical Black-Scholes model and verify the stochastic convergence and reproducibility of the Monte Carlo engine.
-- **Automated Market Data & Risk Analysis Pipeline**: Built a data pipeline that ingests historical market data from `yfinance`, calculates annualized volatility, and feeds it into a risk analysis module that computes and visualizes VaR, CVaR, and the Greeks.
+- **Automated Market Data & Enhanced Risk Analysis Pipeline**: Built a data pipeline that ingests historical market data from `yfinance`, calculates annualized volatility, and feeds it into a comprehensive risk analysis module that computes and visualizes VaR, CVaR, Greeks, and additional risk metrics including probability of expiring worthless, expected P&L, and multiple confidence levels.
 - **Ensured Full Reproducibility with Docker & CI/CD**: Containerized the application with Docker and configured a GitHub Actions workflow for automated testing and linting, ensuring consistent and reliable results in any environment.
 
 ### Skills Demonstrated
@@ -177,7 +206,7 @@ To quantify the impact of Numba's Just-in-Time (JIT) compilation, a benchmark wa
 
 ```
 quant-option-pricer/
-├── quant_option.py           # Main CLI script with full functionality
+├── quant_option.py           # Main CLI script with enhanced risk analysis
 ├── benchmark_performance.py  # Performance benchmarking suite
 ├── requirements.txt          # Python dependencies (pip)
 ├── environment.yml           # Conda environment (alternative to requirements.txt)
@@ -186,7 +215,7 @@ quant-option-pricer/
 │   ├── test_quant_option.py  # Comprehensive unit and integration tests
 │   └── test_data.csv         # Static test data for reproducible testing
 ├── notebooks/
-│   └── QuantOptionDemo.ipynb # Interactive Jupyter notebook for exploration
+│   └── QuantOptionDemo.ipynb # Interactive Jupyter notebook with enhanced analysis
 ├── plots/                    # Directory for generated output figures
 └── .github/
     └── workflows/ci.yml      # GitHub Actions CI/CD pipeline
