@@ -130,6 +130,14 @@ pytest --cov=quant_option
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/vega_surface.png" alt="Vega Surface" style="display: block; margin: auto;">
 *3D surfaces showing the sensitivity of the option price (Delta and Vega) to changes in the spot price and volatility.*
 
+### 5. **Delta-Hedged P&L Distribution**
+<img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/hedge_pnl.png" alt="Hedge P&L" style="display: block; margin: auto;">
+*P&L distribution from discrete delta-hedging simulation, showing the cost-error trade-off of rebalancing frequency vs transaction costs.*
+
+### 6. **Implied Volatility Surface**
+<img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/iv_surface.png" alt="IV Surface" style="display: block; margin: auto;">
+*3D implied volatility surface calibrated from market option prices, showing the volatility smile across moneyness and maturity.*
+
 ---
 
 ### 🗝️ Key Results (AAPL, K=150, T=1.0, r=0.01, 50,000 paths)
