@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from quant_option import (
-    black_scholes_call,
+    black_scholes,
     bs_delta,
     bs_vega,
     compute_var_cvar,
@@ -13,12 +13,12 @@ from quant_option import (
 
 def test_black_scholes_call():
     # Known value for S0=100, K=100, r=0, sigma=0.2, T=1
-    price = black_scholes_call(100, 100, 0.0, 0.2, 1.0)
+    price = black_scholes(100, 100, 0.0, 0.2, 1.0, "call")
     assert pytest.approx(price, rel=1e-3) == 7.9656
 
 
 def test_bs_delta():
-    delta = bs_delta(100, 100, 0.0, 0.2, 1.0)
+    delta = bs_delta(100, 100, 0.0, 0.2, 1.0, "call")
     assert pytest.approx(delta, rel=1e-3) == 0.5398
 
 
@@ -45,8 +45,8 @@ def test_annualized_vol_from_test_data():
 
 def test_mc_price_reproducibility():
     "Ensures that two MC runs with the same seed yield the same price."
-    price1 = monte_carlo_price(100, 100, 0.05, 0.2, 1.0, 252, 1000, 42)
-    price2 = monte_carlo_price(100, 100, 0.05, 0.2, 1.0, 252, 1000, 42)
+    price1 = monte_carlo_price(100, 100, 0.05, 0.2, 1.0, 252, 1000, 42, "call")
+    price2 = monte_carlo_price(100, 100, 0.05, 0.2, 1.0, 252, 1000, 42, "call")
     assert price1 == price2
 
 
@@ -56,8 +56,8 @@ def test_mc_convergence_to_bs():
     A 5% tolerance is loose, but acceptable for a stochastic test.
     """
     S0, K, r, sigma, T = 100, 105, 0.05, 0.2, 1.0
-    bs_price = black_scholes_call(S0, K, r, sigma, T)
-    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 100_000, 42)
+    bs_price = black_scholes(S0, K, r, sigma, T, "call")
+    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 100_000, 42, "call")
     assert pytest.approx(mc_price, rel=0.05) == bs_price
 
 
@@ -69,8 +69,8 @@ def test_zero_volatility():
     S0, K, r, sigma, T = 100, 105, 0.05, 0.0, 1.0
     # With zero volatility, price should be max(0, S0*exp(r*T) - K) * exp(-r*T)
     expected_price = max(0, S0 * np.exp(r * T) - K) * np.exp(-r * T)
-    bs_price = black_scholes_call(S0, K, r, sigma, T)
-    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 1000, 42)
+    bs_price = black_scholes(S0, K, r, sigma, T, "call")
+    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 1000, 42, "call")
 
     # Both should be very close to expected
     assert pytest.approx(bs_price, rel=1e-10) == expected_price
@@ -85,8 +85,8 @@ def test_zero_time_to_maturity():
     S0, K, r, sigma, T = 100, 105, 0.05, 0.2, 0.0
     expected_payoff = max(0, S0 - K)
 
-    bs_price = black_scholes_call(S0, K, r, sigma, T)
-    mc_price = monte_carlo_price(S0, K, r, sigma, T, 1, 1000, 42)
+    bs_price = black_scholes(S0, K, r, sigma, T, "call")
+    mc_price = monte_carlo_price(S0, K, r, sigma, T, 1, 1000, 42, "call")
 
     # Both should equal the immediate payoff
     assert pytest.approx(bs_price, rel=1e-10) == expected_payoff
@@ -99,8 +99,8 @@ def test_at_the_money_zero_volatility():
     should have zero value (no time value, no intrinsic value).
     """
     S0, K, r, sigma, T = 100, 100, 0.0, 0.0, 1.0
-    bs_price = black_scholes_call(S0, K, r, sigma, T)
-    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 1000, 42)
+    bs_price = black_scholes(S0, K, r, sigma, T, "call")
+    mc_price = monte_carlo_price(S0, K, r, sigma, T, 252, 1000, 42, "call")
 
     assert pytest.approx(bs_price, rel=1e-10) == 0.0
     assert pytest.approx(mc_price, rel=1e-10) == 0.0
