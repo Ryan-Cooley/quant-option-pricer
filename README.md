@@ -136,7 +136,7 @@ pytest --cov=quant_option
 
 ### 6. **Implied Volatility Surface**
 <img src="https://raw.githubusercontent.com/Ryan-Cooley/quant-option-pricer/main/plots/iv_surface.png" alt="IV Surface" style="display: block; margin: auto;">
-*Clean 3D implied volatility surface with market data points (red spheres) and professional plasma colormap. Shows volatility structure across moneyness and maturity with summary statistics.*
+*Dual-panel implied volatility analysis: 2D contour map (left) and 3D surface (right) with market data points, smooth gradients, and professional styling. Shows volatility structure across moneyness and maturity.*
 
 ---
 
