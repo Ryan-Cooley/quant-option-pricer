@@ -1,4 +1,6 @@
 [![CI](https://github.com/Ryan-Cooley/quant-option-pricer/actions/workflows/ci.yml/badge.svg)](https://github.com/Ryan-Cooley/quant-option-pricer/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)
 
 # Monte Carlo Option Pricer
 
@@ -170,19 +172,66 @@ The VaR and CVaR values equal the BS price because:
 
 ---
 
-## 🚀 Performance: NumPy vs. Numba
+## Performance (NumPy vs Numba)
 
-To quantify the impact of Numba's Just-in-Time (JIT) compilation, a benchmark was run comparing the Numba-accelerated Monte Carlo engine against a standard NumPy implementation. The results demonstrate a significant performance gain for any substantial number of simulation paths.
+Fair comparison with shared RNG, JIT warm-up, and separate stage timing.
 
-| Paths      | Python Time (s) | Numba Time (s) | Speedup |
-|------------|-----------------|----------------|---------|
-| 1,000      | 0.128           | 0.948          | 0.1x    |
-| 5,000      | 0.649           | 0.017          | **37.7x**   |
-| 10,000     | 1.313           | 0.036          | **36.1x**   |
-| 50,000     | 6.522           | 0.182          | **35.9x**   |
-| 100,000    | 13.346          | 0.371          | **36.0x**   |
+For small path counts, vectorized NumPy can win (JIT overhead). Beyond ~50–100k paths, the looped numba kernel with prange and fastmath typically pulls ahead.
 
-*Note: The initial 0.1x speedup on the first run is expected and demonstrates Numba's one-time JIT compilation overhead. For all subsequent and larger workloads, the acceleration is substantial, averaging around **36-38x**.*
+**Artifacts:**
+- CSV: `benchmarks/benchmarks.csv`
+- Markdown snippet: `benchmarks/README_snippet.md`
+- Plot: `benchmarks/benchmarks.png`
+
+# Performance Benchmarks
+
+Monte Carlo option pricing performance comparison.
+
+| Engine | Paths | Seconds |
+|---|---:|---:|
+| numpy | 10,000 | 0.015 |
+| numba | 10,000 | 0.008 |
+| numpy | 100,000 | 0.152 |
+| numba | 100,000 | 0.041 |
+| numpy | 500,000 | 0.755 |
+| numba | 500,000 | 0.185 |
+| numpy | 1,000,000 | 2.418 |
+| numba | 1,000,000 | 0.385 |
+
+## Hedged P&L (Discrete Delta Hedging)
+
+- Black–Scholes GBM dynamics, discrete re-hedging on a configurable grid (e.g., daily/weekly).
+- Fee model: proportional (bps on traded notional) + optional fixed per trade.
+- Outputs: P&L distribution, percentiles, annualized Sharpe; plots show **tracking error vs. re-hedge frequency** and the **cost–error trade-off**.
+
+**Repro:**
+```bash
+python scripts/run_hedge.py --S0 100 --K 100 --T 0.5 --r 0.02 --sigma 0.2 \
+  --option-type call --n-paths 100000 --rebalance-every 1 --fee-bps 1.0
+```
+
+Takeaway: Higher frequency ↓ tracking error, ↑ trading costs. Choose a frequency on the efficient frontier.
+
+## Implied Volatility (BS) + Mini Surface
+
+Robust IV via Brent/bisection with no-arbitrage bounds and round-trip unit tests.
+
+CSV-driven demo: reads `data/iv_demo.csv`, writes `plots/iv_grid.csv` and `plots/iv_surface.png`.
+
+**Repro:**
+```bash
+python scripts/calibrate_surface.py
+```
+
+Sample (moneyness = K/S, maturity in years), extracted from `plots/iv_grid.csv` when present:
+
+| Moneyness \ T | 0.25 | 0.50 |
+|---------------|------|------|
+| 0.90          | 0.11 | 0.14 |
+| 1.00          | 0.21 | 0.23 |
+| 1.10          | 0.04 | 0.07 |
+
+*(Numbers are illustrative; see your generated CSV for exact values.)*
 
 ## 🧑‍💻 Technical Achievements & Skills Demonstrated
 
@@ -260,6 +309,18 @@ Contributions are welcome! Please follow these steps:
 5.  Commit your changes (`git commit -m 'Add some feature'`).
 6.  Push to the branch (`git push origin feature/my-new-feature`).
 7.  Open a Pull Request.
+
+---
+
+## Reproduce
+
+```bash
+python scripts/run_hedge.py --S0 100 --K 100 --T 0.5 --r 0.02 --sigma 0.2 --n-paths 25000
+python scripts/calibrate_surface.py
+python scripts/benchmark_performance.py
+```
+
+See `notebooks/00_quickstart.ipynb` for a minimal end-to-end demo.
 
 ---
 

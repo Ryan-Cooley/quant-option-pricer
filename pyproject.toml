@@ -1,0 +1,30 @@
+[project]
+name = "quant-option-pricer"
+version = "0.2.0"
+description = "High-performance Monte Carlo option pricing with Numba acceleration"
+requires-python = ">=3.8"
+authors = [
+    {name = "Ryan Cooley", email = "ryan.cooley@example.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+
+[project.urls]
+Homepage = "https://github.com/Ryan-Cooley/quant-option-pricer"
+Repository = "https://github.com/Ryan-Cooley/quant-option-pricer"
+Issues = "https://github.com/Ryan-Cooley/quant-option-pricer/issues"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

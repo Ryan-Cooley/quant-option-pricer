@@ -4,12 +4,19 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import norm
 import yfinance as yf
 import datetime
 from numba import njit
 from pandas_datareader import data as pdr
 from typing import Optional, Literal
+
+# Import pricing functions from the new module
+from src.quant.pricing import (
+    bs_price as black_scholes,
+    bs_delta,
+    bs_vega,
+    mc_euro_price as monte_carlo_price,
+)
 
 OptionType = Literal["call", "put"]
 
@@ -120,73 +127,6 @@ def plot_and_save_returns(returns, ticker, out_dir):
     print(f"Saved returns plot → {out}")
 
 
-# ── Black–Scholes & Greeks ──────────────────────────────────────────────────────
-def black_scholes(S0, K, r, sigma, T, option_type: OptionType):
-    """Analytical Black-Scholes price for a European option."""
-    if T == 0:
-        return max(0, S0 - K) if option_type == "call" else max(0, K - S0)
-    if sigma == 0:
-        val = (
-            S0 * np.exp(r * T) - K if option_type == "call" else K - S0 * np.exp(r * T)
-        )
-        return max(0, val) * np.exp(-r * T)
-
-    d1 = (np.log(S0 / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    if option_type == "call":
-        return S0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-    elif option_type == "put":
-        return K * np.exp(-r * T) * norm.cdf(-d2) - S0 * norm.cdf(-d1)
-    else:
-        raise ValueError("option_type must be 'call' or 'put'")
-
-
-def bs_delta(S0, K, r, sigma, T, option_type: OptionType):
-    """Analytical Delta of a European option."""
-    S0, K, r, sigma, T = np.broadcast_arrays(S0, K, r, sigma, T)
-    mask = (sigma == 0) | (T == 0)
-    out = np.empty_like(S0, dtype=float)
-
-    if option_type == "call":
-        out[mask] = np.where(S0[mask] > K[mask], 1.0, 0.0)
-    else:  # put
-        out[mask] = np.where(S0[mask] < K[mask], -1.0, 0.0)
-
-    if np.any(~mask):
-        S0_, K_, r_, sigma_, T_ = (
-            S0[~mask],
-            K[~mask],
-            r[~mask],
-            sigma[~mask],
-            T[~mask],
-        )
-        d1 = (np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_) / (sigma_ * np.sqrt(T_))
-        if option_type == "call":
-            out[~mask] = norm.cdf(d1)
-        else:  # put
-            out[~mask] = norm.cdf(d1) - 1.0
-    return out.item() if out.shape == () else out
-
-
-def bs_vega(S0, K, r, sigma, T):
-    """Analytical Vega of a European option (same for call/put)."""
-    S0, K, r, sigma, T = np.broadcast_arrays(S0, K, r, sigma, T)
-    mask = (sigma == 0) | (T == 0)
-    out = np.empty_like(S0, dtype=float)
-    out[mask] = 0.0
-    if np.any(~mask):
-        S0_, K_, r_, sigma_, T_ = (
-            S0[~mask],
-            K[~mask],
-            r[~mask],
-            sigma[~mask],
-            T[~mask],
-        )
-        d1 = (np.log(S0_ / K_) + (r_ + 0.5 * sigma_**2) * T_) / (sigma_ * np.sqrt(T_))
-        out[~mask] = S0_ * norm.pdf(d1) * np.sqrt(T_)
-    return out.item() if out.shape == () else out
-
-
 # ── Monte Carlo with Numba ─────────────────────────────────────────────────────
 @njit
 def simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed, option_type_is_call):
@@ -210,15 +150,6 @@ def simulate_gbm_numba(S0, K, r, sigma, T, steps, n_paths, seed, option_type_is_
             payoff = max(K - ST, 0.0)
         payoff_sum += payoff
     return np.exp(-r * T) * (payoff_sum / n_paths)
-
-
-def monte_carlo_price(
-    S0, K, r, sigma, T, steps, n_paths, seed, option_type: OptionType
-):
-    """Wrapper for the Numba-accelerated MC pricer."""
-    return simulate_gbm_numba(
-        S0, K, r, sigma, T, steps, n_paths, seed, option_type == "call"
-    )
 
 
 def simulate_gbm_paths(S0, r, sigma, T, steps, n_paths, seed):
