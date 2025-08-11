@@ -8,6 +8,7 @@ Read option data from CSV, compute implied volatilities, and generate surface pl
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import os
 import sys
 
@@ -51,7 +52,7 @@ def compute_ivs(df):
 
 def create_iv_surface(df, output_path):
     """
-    Create IV surface heatmap and save to file.
+    Create enhanced IV surface visualization and save to file.
 
     Args:
         df: DataFrame with iv, K, S, T columns
@@ -63,52 +64,95 @@ def create_iv_surface(df, output_path):
     # Create pivot table
     pivot = df.pivot_table(values="iv", index="moneyness", columns="T", aggfunc="mean")
 
-    # Create the plot
-    plt.figure(figsize=(10, 8))
-
-    # Create heatmap
-    im = plt.imshow(
-        pivot.values,
-        cmap="viridis",
-        aspect="auto",
-        origin="lower",
-        extent=[
-            pivot.columns.min(),
-            pivot.columns.max(),
-            pivot.index.min(),
-            pivot.index.max(),
-        ],
-    )
-
-    # Add colorbar
-    cbar = plt.colorbar(im)
-    cbar.set_label("Implied Volatility", rotation=270, labelpad=20)
-
-    # Set labels and title
-    plt.xlabel("Time to Maturity (years)")
-    plt.ylabel("Moneyness (K/S)")
-    plt.title("Implied Volatility Surface")
-
-    # Add text annotations
-    for i in range(len(pivot.index)):
-        for j in range(len(pivot.columns)):
-            value = pivot.iloc[i, j]
-            if not np.isnan(value):
-                plt.text(
-                    pivot.columns[j],
-                    pivot.index[i],
-                    f"{value:.3f}",
-                    ha="center",
-                    va="center",
-                    color="white" if value > 0.3 else "black",
-                    fontsize=10,
-                )
-
+    # Create figure with subplots for both 2D and 3D views
+    fig = plt.figure(figsize=(16, 8))
+    
+    # Set style
+    plt.style.use('default')
+    
+    # === Left subplot: Enhanced 2D Heatmap ===
+    ax1 = plt.subplot(1, 2, 1)
+    
+    # Create contour-filled heatmap with more levels
+    X, Y = np.meshgrid(pivot.columns, pivot.index)
+    Z = pivot.values
+    
+    # Create smooth contour plot
+    levels = np.linspace(np.nanmin(Z), np.nanmax(Z), 20)
+    contour = ax1.contourf(X, Y, Z, levels=levels, cmap='RdYlBu_r', alpha=0.9)
+    
+    # Add contour lines
+    contour_lines = ax1.contour(X, Y, Z, levels=10, colors='black', alpha=0.4, linewidths=0.5)
+    ax1.clabel(contour_lines, inline=True, fontsize=8, fmt='%.2f')
+    
+    # Enhance colorbar
+    cbar1 = plt.colorbar(contour, ax=ax1, shrink=0.8)
+    cbar1.set_label('Implied Volatility (σ)', rotation=270, labelpad=20, fontsize=12)
+    cbar1.ax.tick_params(labelsize=10)
+    
+    # Add data points
+    for i, row in df.iterrows():
+        ax1.plot(row['T'], row['moneyness'], 'ko', markersize=6, alpha=0.8)
+        ax1.annotate(f"{row['iv']:.2f}", 
+                    (row['T'], row['moneyness']),
+                    xytext=(5, 5), textcoords='offset points',
+                    fontsize=9, color='white', weight='bold',
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='black', alpha=0.7))
+    
+    # Styling
+    ax1.set_xlabel('Time to Maturity (years)', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Moneyness (K/S)', fontsize=12, fontweight='bold')
+    ax1.set_title('Implied Volatility Surface\n(Contour Map)', fontsize=14, fontweight='bold', pad=20)
+    ax1.grid(True, alpha=0.3)
+    ax1.set_facecolor('#f8f9fa')
+    
+    # === Right subplot: 3D Surface ===
+    ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+    
+    # Create meshgrid for 3D surface
+    X_3d, Y_3d = np.meshgrid(pivot.columns, pivot.index)
+    Z_3d = pivot.values
+    
+    # Create 3D surface
+    surf = ax2.plot_surface(X_3d, Y_3d, Z_3d, 
+                           cmap='RdYlBu_r', 
+                           alpha=0.9,
+                           linewidth=0, 
+                           antialiased=True,
+                           edgecolor='none')
+    
+    # Add wireframe overlay
+    ax2.plot_wireframe(X_3d, Y_3d, Z_3d, color='black', alpha=0.3, linewidth=0.5)
+    
+    # Add colorbar for 3D plot
+    cbar2 = fig.colorbar(surf, ax=ax2, shrink=0.6, aspect=20)
+    cbar2.set_label('Implied Volatility (σ)', rotation=270, labelpad=15, fontsize=11)
+    
+    # Styling 3D plot
+    ax2.set_xlabel('Time to Maturity (years)', fontsize=11, fontweight='bold')
+    ax2.set_ylabel('Moneyness (K/S)', fontsize=11, fontweight='bold')
+    ax2.set_zlabel('Implied Volatility (σ)', fontsize=11, fontweight='bold')
+    ax2.set_title('Implied Volatility Surface\n(3D View)', fontsize=14, fontweight='bold', pad=20)
+    
+    # Set viewing angle
+    ax2.view_init(elev=25, azim=45)
+    
+    # Add subtle background color
+    ax2.xaxis.pane.fill = False
+    ax2.yaxis.pane.fill = False
+    ax2.zaxis.pane.fill = False
+    ax2.grid(True, alpha=0.3)
+    
+    # Overall figure styling
+    fig.suptitle('Options Implied Volatility Analysis', fontsize=16, fontweight='bold', y=0.95)
     plt.tight_layout()
-    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.subplots_adjust(top=0.88)
+    
+    # Save with high quality
+    plt.savefig(output_path, dpi=300, bbox_inches="tight", facecolor='white', edgecolor='none')
     plt.close()
 
-    print(f"Saved IV surface plot → {output_path}")
+    print(f"Saved enhanced IV surface plot → {output_path}")
 
 
 def print_sample_table(df, n_rows=3, n_cols=2):
