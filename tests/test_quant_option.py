@@ -47,8 +47,12 @@ def test_annualized_vol_from_test_data():
 
 def test_mc_price_reproducibility():
     "Ensures that two MC runs with the same seed yield the same price."
-    price1 = monte_carlo_price(100, 100, 1.0, 0.05, 0.2, n_paths=1000, seed=42, option_type="call")
-    price2 = monte_carlo_price(100, 100, 1.0, 0.05, 0.2, n_paths=1000, seed=42, option_type="call")
+    price1 = monte_carlo_price(
+        100, 100, 1.0, 0.05, 0.2, n_paths=1000, seed=42, option_type="call"
+    )
+    price2 = monte_carlo_price(
+        100, 100, 1.0, 0.05, 0.2, n_paths=1000, seed=42, option_type="call"
+    )
     assert price1 == price2
 
 
@@ -59,7 +63,9 @@ def test_mc_convergence_to_bs():
     """
     S0, K, r, sigma, T = 100, 105, 0.05, 0.2, 1.0
     bs_price = black_scholes(S0, K, T, r, sigma, "call")
-    mc_price = monte_carlo_price(S0, K, T, r, sigma, n_paths=100_000, seed=42, option_type="call")
+    mc_price = monte_carlo_price(
+        S0, K, T, r, sigma, n_paths=100_000, seed=42, option_type="call"
+    )
     assert pytest.approx(mc_price, rel=0.05) == bs_price
 
 
@@ -72,7 +78,9 @@ def test_zero_volatility():
     # With zero volatility, price should be max(0, S0*exp(r*T) - K) * exp(-r*T)
     expected_price = max(0, S0 * np.exp(r * T) - K) * np.exp(-r * T)
     bs_price = black_scholes(S0, K, T, r, sigma, "call")
-    mc_price = monte_carlo_price(S0, K, T, r, sigma, n_paths=1000, seed=42, option_type="call")
+    mc_price = monte_carlo_price(
+        S0, K, T, r, sigma, n_paths=1000, seed=42, option_type="call"
+    )
 
     # Both should be very close to expected
     assert pytest.approx(bs_price, rel=1e-10) == expected_price
@@ -88,7 +96,9 @@ def test_zero_time_to_maturity():
     expected_payoff = max(0, S0 - K)
 
     bs_price = black_scholes(S0, K, T, r, sigma, "call")
-    mc_price = monte_carlo_price(S0, K, T, r, sigma, n_paths=1000, seed=42, option_type="call")
+    mc_price = monte_carlo_price(
+        S0, K, T, r, sigma, n_paths=1000, seed=42, option_type="call"
+    )
 
     # Both should equal the immediate payoff
     assert pytest.approx(bs_price, rel=1e-10) == expected_payoff
