@@ -52,6 +52,7 @@ def simulate_delta_hedge(
     fee_bps: float = 0.0,  # proportional fee on traded notional
     fixed_fee: float = 0.0,  # per nonzero trade
     seed: int = 42,
+    units: str = "s0",  # denominator for TE/Cost: "s0" or "premium"
 ) -> HedgeResult:
     """
     Short 1 option at t0 for BS price; replicate with Δ_t shares.
@@ -159,6 +160,32 @@ def simulate_delta_hedge(
         "p95": p95,
     }
 
+    # Calculate tracking error and cost metrics
+    # Choose denominator based on units parameter
+    denom = S0 if units == "s0" else option_premium
+    
+    # Tracking Error: RMSE between P&L and its mean (measures hedging effectiveness)
+    te_bps = np.sqrt(np.mean((pnl_paths - mean_pnl) ** 2)) / denom * 10000
+    
+    # Cost: turnover-based proportional fees
+    fee_rate = fee_bps / 10000
+    cost_cash = abs(delta[0, 0]) * S[0, 0] * fee_rate  # Initial position cost
+    
+    # Add rebalancing costs
+    for i in range(1, len(delta)):
+        if i % rebalance_every == 0:
+            d_delta = delta[i, 0] - delta[i - 1, 0]  # Use first path for deterministic cost
+            cost_cash += abs(d_delta) * S[i, 0] * fee_rate
+    
+    cost_bps = 10000 * (cost_cash / denom)
+    
+    metrics = {
+        rebalance_every: {
+            "te_bps": te_bps,
+            "cost_bps": cost_bps,
+        }
+    }
+
     notes = {
         "dt": dt,
         "steps": steps,
@@ -167,6 +194,7 @@ def simulate_delta_hedge(
         "fixed_fee": fixed_fee,
         "option_premium": option_premium,
         "initial_delta": delta[0, 0],
+        "metrics": metrics,
     }
 
     return HedgeResult(

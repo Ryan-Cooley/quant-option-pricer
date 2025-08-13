@@ -4,6 +4,16 @@
 
 # Monte Carlo Option Pricer
 
+> **TL;DR**
+> - Numba-accelerated GBM pricer with **hedged P&L** and **IV calibration/mini-surface**
+> - **Validated vs. Black–Scholes**; benchmarks at **10<sup>5</sup>–10<sup>6</sup>** paths
+> - **Reproduce (IV surface):**
+>   ```bash
+>   pip install -r requirements.txt
+>   python scripts/calibrate_surface.py
+>   ```
+>   Outputs: `plots/iv_surface.png`, `plots/iv_grid.csv`
+
 A high-performance, production-ready Monte Carlo simulation engine for pricing European options, complete with comprehensive risk analysis and visualization. This project showcases a blend of advanced Python programming, financial modeling, and modern software engineering best practices.
 
 ## 🎯 Overview
@@ -52,6 +62,18 @@ pip install -r requirements.txt
 # Or install in editable/development mode (recommended for contributors)
 pip install -e .
 ```
+
+⚠️ For pricing, prefer implied volatility; historical vol here is demonstration-only.
+
+### Flags Quick Reference
+
+| Flag | Meaning | Default | Example |
+|---|---|---|---|
+| --rebalance-every | Steps between hedges (comma list OK) | 1 | --rebalance-every 1,2,5 |
+| --fee-bps | Proportional fee in bps | 10.0 | --fee-bps 1.0 |
+| --units | Denominator for TE/Cost | s0 | --units premium |
+| --n-paths | Monte Carlo paths | 100000 | --n-paths 200000 |
+| --out-csv | Metrics CSV output | None | --out-csv plots/hedge_metrics.csv |
 
 > **Note:**
 > - Use `requirements.txt` for standard Python/pip environments.
@@ -102,6 +124,29 @@ pytest --cov=quant_option
 - **Stochastic Validation**: The Monte Carlo engine's results are validated for convergence to the analytical Black-Scholes price. Reproducibility is ensured by testing with a fixed random seed.
 - **Edge Case Handling**: The test suite includes checks for edge cases such as zero volatility and zero time-to-maturity to ensure the models behave as expected.
 - **Data Pipeline**: The volatility estimation from historical data is tested using a static dataset for consistency.
+
+---
+
+## Examples
+
+### 1) IV Surface (from CSV)
+Calibrate implied vols and render a mini surface.
+```bash
+pip install -r requirements.txt
+python scripts/calibrate_surface.py
+```
+Outputs: `plots/iv_surface.png`, `plots/iv_grid.csv`
+
+### 2) Hedged P&L — Cost–Error Frontier (multi-Δt)
+Run multiple rebalance intervals with premium-denominated metrics and CSV logging.
+```bash
+python scripts/run_hedge.py \
+  --rebalance-every 1,2,5 --fee-bps 1.0 --units premium \
+  --out-csv plots/hedge_metrics.csv --seed 42
+```
+Outputs: `plots/hedge_pnl.png`, `plots/hedge_frontier.png`, `plots/hedge_metrics.csv`
+
+Note: Δt (aka rebalance-every; CSV column dt) controls rebalancing frequency.
 
 ---
 
@@ -211,11 +256,18 @@ Monte Carlo option pricing performance comparison.
 - Black–Scholes GBM dynamics, discrete re-hedging on a configurable grid (e.g., daily/weekly).
 - Fee model: proportional (bps on traded notional) + optional fixed per trade.
 - Outputs: P&L distribution, percentiles, annualized Sharpe; plots show **tracking error vs. re-hedge frequency** and the **cost–error trade-off**.
+- With proportional fees, more frequent rebalancing reduces tracking error but increases cost; less frequent rebalancing does the opposite.
+- Δt (aka rebalance-every; CSV column dt) controls rebalancing frequency.
 
 **Repro:**
 ```bash
 python scripts/run_hedge.py --S0 100 --K 100 --T 0.5 --r 0.02 --sigma 0.2 \
   --option-type call --n-paths 100000 --rebalance-every 1 --fee-bps 1.0
+```
+
+**Quick example (multi-Δt with premium units):**
+```bash
+python scripts/run_hedge.py --rebalance-every 1,2,5 --fee-bps 1.0 --units premium --out-csv plots/hedge_metrics.csv
 ```
 
 Takeaway: Higher frequency ↓ tracking error, ↑ trading costs. Choose a frequency on the efficient frontier.
