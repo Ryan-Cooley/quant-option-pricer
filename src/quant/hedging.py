@@ -163,22 +163,23 @@ def simulate_delta_hedge(
     # Calculate tracking error and cost metrics
     # Choose denominator based on units parameter
     denom = S0 if units == "s0" else option_premium
-    
+
     # Tracking Error: RMSE between P&L and its mean (measures hedging effectiveness)
     te_bps = np.sqrt(np.mean((pnl_paths - mean_pnl) ** 2)) / denom * 10000
-    
+
     # Cost: turnover-based proportional fees
     fee_rate = fee_bps / 10000
     cost_cash = abs(delta[0, 0]) * S[0, 0] * fee_rate  # Initial position cost
-    
+
     # Add rebalancing costs
     for i in range(1, len(delta)):
         if i % rebalance_every == 0:
-            d_delta = delta[i, 0] - delta[i - 1, 0]  # Use first path for deterministic cost
+            # Use first path for deterministic cost
+            d_delta = delta[i, 0] - delta[i - 1, 0]
             cost_cash += abs(d_delta) * S[i, 0] * fee_rate
-    
+
     cost_bps = 10000 * (cost_cash / denom)
-    
+
     metrics = {
         rebalance_every: {
             "te_bps": te_bps,
