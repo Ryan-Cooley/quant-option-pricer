@@ -271,6 +271,9 @@ def plot_frontier_scatter(all_results, args, plots_dir):
     # Create scatter plot
     plt.scatter(te_values, cost_values, s=100, alpha=0.7, edgecolors="black")
 
+    # Add dotted line connecting the points
+    plt.plot(te_values, cost_values, '--', alpha=0.5, color='gray', linewidth=1)
+
     # Annotate points with Δt values
     for i, (te, cost, dt) in enumerate(zip(te_values, cost_values, dt_labels)):
         plt.annotate(
