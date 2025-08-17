@@ -186,48 +186,6 @@ def plot_pnl_histogram(pnl_paths, summary, args, all_results, output_path):
         )
         plt.axis("off")
 
-    # Add metrics table on the right side
-    if all_results:
-        # Prepare table data for all results
-        table_data = []
-        for dt in sorted(all_results.keys()):
-            result = all_results[dt]
-            if "metrics" in result.notes and dt in result.notes["metrics"]:
-                metric_data = result.notes["metrics"][dt]
-                te_bps = metric_data["te_bps"]
-                cost_bps = metric_data["cost_bps"]
-                table_data.append([f"Δt={dt}", f"{te_bps:.1f}", f"{cost_bps:.1f}"])
-
-        if table_data:
-            # Create table with dynamic labels based on units
-            unit_label = "S0" if args.units == "s0" else "premium"
-            table = plt.table(
-                cellText=table_data,
-                colLabels=[
-                    "Δt (steps)",
-                    f"TE (bps of {unit_label})",
-                    f"Cost (bps of {unit_label})",
-                ],
-                cellLoc="center",
-                loc="upper left",
-                bbox=[1.02, 0.0, 0.35, 0.4],
-            )
-
-            # Style the table
-            table.auto_set_font_size(False)
-            table.set_fontsize(9)
-            table.scale(1, 1.5)
-
-            # Right-align numbers
-            for i in range(len(table_data)):
-                table[(i + 1, 1)]._text.set_horizontalalignment("right")
-                table[(i + 1, 2)]._text.set_horizontalalignment("right")
-
-            # Style headers
-            for j in range(3):
-                table[(0, j)].set_facecolor("#E6E6E6")
-                table[(0, j)]._text.set_weight("bold")
-
     # Add metadata stamp
     if first_result:
         meta_string = (
@@ -244,7 +202,6 @@ def plot_pnl_histogram(pnl_paths, summary, args, all_results, output_path):
             transform=plt.gcf().transFigure,
         )
 
-    plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close()
 
@@ -462,7 +419,9 @@ def main():
 
     # Create plots directory and save histogram
     # Use environment variable for test plots directory if set
-    plots_dir = os.environ.get("TEST_PLOTS_DIR", os.path.join(os.path.dirname(__file__), "..", "plots"))
+    plots_dir = os.environ.get(
+        "TEST_PLOTS_DIR", os.path.join(os.path.dirname(__file__), "..", "plots")
+    )
     os.makedirs(plots_dir, exist_ok=True)
     plot_path = os.path.join(plots_dir, "hedge_pnl.png")
 
