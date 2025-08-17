@@ -81,7 +81,7 @@ def main():
 
     # 1. Delta Hedging Demo
     success1 = run_command(
-        "python scripts/run_hedge.py --S0 100 --K 100 --T 0.25 --r 0.01 --sigma 0.2 --n-paths 5000 --rebalance-every 1 --fee-bps 1.0",
+        "python scripts/run_hedge.py --S0 100 --K 100 --T 0.25 --r 0.01 --sigma 0.2 --n-paths 5000 --fee-bps 1.0",
         "Delta Hedging P&L Simulation",
     )
 
