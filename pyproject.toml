@@ -1,6 +1,6 @@
 [project]
 name = "quant-option-pricer"
-version = "0.2.0"
+version = "0.3.1"
 description = "High-performance Monte Carlo option pricing with Numba acceleration"
 requires-python = ">=3.8"
 authors = [
@@ -28,3 +28,12 @@ Issues = "https://github.com/Ryan-Cooley/quant-option-pricer/issues"
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

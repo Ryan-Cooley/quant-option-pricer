@@ -4,11 +4,11 @@ Monte Carlo option pricing performance comparison.
 
 | Engine | Paths | Seconds |
 |---|---:|---:|
-| numpy | 10,000 | 0.015 |
-| numba | 10,000 | 0.008 |
-| numpy | 100,000 | 0.152 |
-| numba | 100,000 | 0.041 |
-| numpy | 500,000 | 0.755 |
-| numba | 500,000 | 0.185 |
-| numpy | 1,000,000 | 2.418 |
+| numpy | 10,000 | 0.014 |
+| numba | 10,000 | 0.007 |
+| numpy | 100,000 | 0.149 |
+| numba | 100,000 | 0.043 |
+| numpy | 500,000 | 0.747 |
+| numba | 500,000 | 0.206 |
+| numpy | 1,000,000 | 2.498 |
 | numba | 1,000,000 | 0.385 |
