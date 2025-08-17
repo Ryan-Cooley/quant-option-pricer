@@ -303,33 +303,38 @@ def test_csv_output():
         # Run hedge simulation with CSV output
         from scripts.run_hedge import main
         import sys
+        import tempfile
+        import os
         from unittest.mock import patch
 
-        # Mock command line arguments
-        test_args = [
-            "run_hedge.py",
-            "--S0",
-            "100",
-            "--K",
-            "100",
-            "--T",
-            "0.25",
-            "--r",
-            "0.02",
-            "--sigma",
-            "0.2",
-            "--n-paths",
-            "100",
-            "--rebalance-every",
-            "1,5",
-            "--fee-bps",
-            "1.0",
-            "--out-csv",
-            csv_path,
-        ]
+        # Create temporary plots directory
+        with tempfile.TemporaryDirectory() as tmp_plots_dir:
+            # Mock command line arguments
+            test_args = [
+                "run_hedge.py",
+                "--S0",
+                "100",
+                "--K",
+                "100",
+                "--T",
+                "0.25",
+                "--r",
+                "0.02",
+                "--sigma",
+                "0.2",
+                "--n-paths",
+                "100",
+                "--rebalance-every",
+                "1,5",
+                "--fee-bps",
+                "1.0",
+                "--out-csv",
+                csv_path,
+            ]
 
-        with patch.object(sys, "argv", test_args):
-            main()
+            # Set environment variable for test plots directory
+            with patch.object(sys, "argv", test_args), patch.dict(os.environ, {"TEST_PLOTS_DIR": tmp_plots_dir}):
+                main()
 
         # Check that CSV was created
         assert os.path.exists(csv_path)

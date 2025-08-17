@@ -461,7 +461,8 @@ def main():
         print("Saved metrics →", args.out_csv)
 
     # Create plots directory and save histogram
-    plots_dir = os.path.join(os.path.dirname(__file__), "..", "plots")
+    # Use environment variable for test plots directory if set
+    plots_dir = os.environ.get("TEST_PLOTS_DIR", os.path.join(os.path.dirname(__file__), "..", "plots"))
     os.makedirs(plots_dir, exist_ok=True)
     plot_path = os.path.join(plots_dir, "hedge_pnl.png")
 
