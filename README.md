@@ -69,7 +69,7 @@ pip install -e .
 
 | Flag | Meaning | Default | Example |
 |---|---|---|---|
-| --rebalance-every | Steps between hedges (comma list OK) | 1 | --rebalance-every 1,2,5 |
+| --rebalance-every | Steps between hedges (comma list OK) | 1,2,5,10 | --rebalance-every 1,2,5 |
 | --fee-bps | Proportional fee in bps | 10.0 | --fee-bps 1.0 |
 | --units | Denominator for TE/Cost | s0 | --units premium |
 | --n-paths | Monte Carlo paths | 100000 | --n-paths 200000 |
@@ -262,7 +262,7 @@ Monte Carlo option pricing performance comparison.
 **Repro:**
 ```bash
 python scripts/run_hedge.py --S0 100 --K 100 --T 0.5 --r 0.02 --sigma 0.2 \
-  --option-type call --n-paths 100000 --rebalance-every 1 --fee-bps 1.0
+  --option-type call --n-paths 100000 --rebalance-every 1,2,5,10 --fee-bps 1.0
 ```
 
 **Quick example (multi-Δt with premium units):**

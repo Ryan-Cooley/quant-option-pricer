@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument(
         "--rebalance-every",
         type=str,
-        default="1",
+        default="1,2,5,10",
         help=(
             "Rebalance frequency(s) (in steps). Use comma-separated list for "
             "multiple values, e.g., '1,2,5,10'"
